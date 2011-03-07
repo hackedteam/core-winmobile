@@ -1,0 +1,9 @@
+LIBRARY	"SmsFilter"
+
+EXPORTS
+
+DllGetClassObject PRIVATE
+DllCanUnloadNow PRIVATE
+DllRegisterServer PRIVATE
+DllUnregisterServer PRIVATE
+SetService PRIVATE
