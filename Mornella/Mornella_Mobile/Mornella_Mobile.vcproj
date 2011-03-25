@@ -5,10 +5,6 @@
 	Name="Mornella"
 	ProjectGUID="{113B43D5-DE6F-4327-A2BF-DB72082D0AA0}"
 	RootNamespace="Mornella"
-	SccProjectName="Svn"
-	SccAuxPath="Svn"
-	SccLocalPath="Svn"
-	SccProvider="SubversionScc"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>

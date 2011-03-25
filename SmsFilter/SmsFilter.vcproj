@@ -5,10 +5,6 @@
 	Name="SmsFilter"
 	ProjectGUID="{D068B11D-5706-4189-954A-4D82A67EB8E5}"
 	RootNamespace="SmsFilter"
-	SccProjectName="Svn"
-	SccAuxPath="Svn"
-	SccLocalPath="Svn"
-	SccProvider="SubversionScc"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>

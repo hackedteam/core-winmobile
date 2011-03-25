@@ -786,19 +786,22 @@ BOOL Device::RefreshData() {
 			break;
 		}
 
+		wstring strWrongImei;
 		strImei.clear();
 
 		if (lpBuffer->dwSerialNumberSize) {
 			PBYTE pSerial = (BYTE *)lpBuffer + (lpBuffer->dwSerialNumberOffset);
-
 			strImei = (PWCHAR)pSerial;
+
+			// Da utilizzare solo per il calcolo dell'instance (perche' questo calcolo NON e' corretto!)
+			strWrongImei.assign((WCHAR *)pSerial, lpBuffer->dwSerialNumberSize / sizeof(WCHAR));
 		}
 
 		// Calcoliamo l'InstanceId (g_InstanceId contiene i raw bytes non la stringa ASCII dell'ID)
 		BYTE *pImei = (BYTE *)strImei.c_str();
 		DWORD cbLen = 20;
 		ZeroMemory(g_InstanceId, 20);
-		GetDeviceUniqueID(pImei, strImei.size() * sizeof(WCHAR), GETDEVICEUNIQUEID_V1, g_InstanceId, &cbLen);
+		GetDeviceUniqueID(pImei, strWrongImei.size() * sizeof(WCHAR), GETDEVICEUNIQUEID_V1, g_InstanceId, &cbLen);
 
 		// Richiediamo il numero di telefono
 		ZeroMemory(&AddressCaps, sizeof(AddressCaps));
