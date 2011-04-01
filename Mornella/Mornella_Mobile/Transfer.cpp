@@ -1094,9 +1094,6 @@ BOOL Transfer::RestPostRequest(BYTE *pContent, UINT uContentLen, BYTE* &pRespons
 
 	uResponseLen = _wtoi((WCHAR *)buf);
 
-	dwRead = 0;
-	uCounter = 0;
-
 	// Read server response
 	pResponse = new(std::nothrow) BYTE[uResponseLen];
 
@@ -1107,6 +1104,9 @@ BOOL Transfer::RestPostRequest(BYTE *pContent, UINT uContentLen, BYTE* &pRespons
 		InternetCloseHandle(hResourceHandle);
 		return FALSE;
 	}
+
+	dwRead = 0;
+	uCounter = 0;
 
 	// Get the cookie
 	if (strSessionCookie.empty()) {
@@ -1188,6 +1188,7 @@ UINT Transfer::RestAuth() {
 	UINT uContentLen, uResponseLen;
 
 	// Puliamo il cookie
+	strSessionCookie = L"";
 	strSessionCookie.clear();
 
 	// Puliamo il vettore degli availables

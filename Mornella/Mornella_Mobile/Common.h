@@ -65,7 +65,7 @@ using namespace std;
  * Define per il demo-mode
  */
 //#define _DEMO
-#define LOG_TO_DEBUGGER
+//#define LOG_TO_DEBUGGER
 
 #ifdef _DEMO
 extern wstring g_StrDemo;
