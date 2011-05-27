@@ -91,7 +91,7 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 				break;
 		}
 
-		if (EventSleep(MyData, 1000)) {
+		if (EventSleep(MyData, 2000)) {
 			statusObj->ThreadEventStopped(MyData);
 			DBG_TRACE(L"Debug - Events.cpp - OnTimer clean stop [1]\n", 5, FALSE);
 			return TRUE;

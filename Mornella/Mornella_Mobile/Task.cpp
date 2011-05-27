@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define SLEEP_TIME 600	// Intervallo per il controllo della event list in ms
+#define SLEEP_TIME 1000	// Intervallo per il controllo della event list in ms
 
 Task::Task() : m_bUninstall(FALSE), statusObj(NULL), confObj(NULL), hEvents(NULL), hAgents(NULL),
 uEvents(0), uAgents(0), m_bReload(FALSE), deviceObj(NULL), uberlogObj(NULL), observerObj(NULL) {

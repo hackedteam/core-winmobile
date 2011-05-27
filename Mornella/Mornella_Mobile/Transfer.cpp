@@ -1060,20 +1060,25 @@ BOOL Transfer::RestPostRequest(BYTE *pContent, UINT uContentLen, BYTE* &pRespons
 		strCookie += L"\r\n";
 
 		// Cambiato 0 in HTTP_ADDREQ_FLAG_REPLACE testare
-		if (HttpAddRequestHeaders(hResourceHandle, strCookie.c_str(), -1, HTTP_ADDREQ_FLAG_REPLACE | HTTP_ADDREQ_FLAG_ADD ) == FALSE) {
+		/*if (HttpAddRequestHeaders(hResourceHandle, strCookie.c_str(), -1, HTTP_ADDREQ_FLAG_REPLACE | HTTP_ADDREQ_FLAG_ADD ) == FALSE) {
 			HttpAddRequestHeaders(hResourceHandle, strCookie.c_str(), -1, 0);
+		}*/
+		if (HttpSendRequest(hResourceHandle, strCookie.c_str(), strCookie.length(), pContent, uContentLen) == FALSE) {
+			DBG_TRACE(L"Debug - Transfer.cpp - RestMakeRequest() FAILED [HttpSendRequest() [cookie not set]] ", 4, TRUE);
+			InternetCloseHandle(hOpenHandle);
+			InternetCloseHandle(hConnectHandle);
+			InternetCloseHandle(hResourceHandle);
+			return FALSE;
 		}
-	}
-
-	// Send POST request
-	DWORD dwIndex = 0;
-
-	if (HttpSendRequest(hResourceHandle, NULL, 0, pContent, uContentLen) == FALSE) {
-		DBG_TRACE(L"Debug - Transfer.cpp - RestMakeRequest() FAILED [HttpSendRequest()] ", 4, TRUE);
-		InternetCloseHandle(hOpenHandle);
-		InternetCloseHandle(hConnectHandle);
-		InternetCloseHandle(hResourceHandle);
-		return FALSE;
+	} else {
+		// Send POST request
+		if (HttpSendRequest(hResourceHandle, NULL, 0, pContent, uContentLen) == FALSE) {
+			DBG_TRACE(L"Debug - Transfer.cpp - RestMakeRequest() FAILED [HttpSendRequest()] ", 4, TRUE);
+			InternetCloseHandle(hOpenHandle);
+			InternetCloseHandle(hConnectHandle);
+			InternetCloseHandle(hResourceHandle);
+			return FALSE;
+		}
 	}
 
 	DWORD dwRead = 0;
@@ -1141,7 +1146,7 @@ BOOL Transfer::RestPostRequest(BYTE *pContent, UINT uContentLen, BYTE* &pRespons
 		dwRead = 0;
 
 		if (HttpQueryInfo(hResourceHandle, HTTP_QUERY_SET_COOKIE, cookie, (DWORD *)&uCounter, &dwRead) == FALSE) {
-			DBG_TRACE(L"Debug - Transfer.cpp - RestMakeRequest() FAILED [HttpQueryInfo() 2]: ", 4, TRUE);
+			DBG_TRACE(L"Debug - Transfer.cpp - RestMakeRequest() FAILED [HttpQueryInfo() 2 [cookie not set]]: ", 4, TRUE);
 			delete[] pResponse;
 			InternetCloseHandle(hOpenHandle);
 			InternetCloseHandle(hConnectHandle);
