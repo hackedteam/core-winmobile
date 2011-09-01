@@ -11,9 +11,11 @@
 DWORD WINAPI OnTimer(LPVOID lpParam) {
 	EVENT_COMMON_DATA(EVENT_TIMER);
 	pTimerStruct myConf = (pTimerStruct)(MyData->pParams);
-	unsigned __int64 time, tmp_time;
-	UINT wait;
+	unsigned __int64 curTime, tmp_time;
+	SYSTEMTIME st;
+	UINT wait, uStart, uStop, msFromMidnight;
 	WCHAR pathName[MAX_PATH] = {0};
+	BOOL bDailyActive = FALSE;
 
 	if (statusObj == NULL || lpParam == NULL) {
 		return TRUE;
@@ -28,14 +30,14 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 	DBG_TRACE(L"Debug - Events.cpp - OnTimer event started\n", 5, FALSE);
 
 	tmp_time = 0;
-	time = GetTime();
+	curTime = GetTime();
 
 	LOOP {
 		switch (myConf->uType) {
 			case CONF_TIMER_SINGLE:
 				wait = myConf->Lo_Delay;
 
-				if (DiffTime(GetTime(), time) >= wait) {
+				if (DiffTime(GetTime(), curTime) >= wait) {
 					statusObj->TriggerAction(MyData->uActionId);
 					statusObj->ThreadEventStopped(MyData);
 					return TRUE;
@@ -47,8 +49,8 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 				wait = myConf->Lo_Delay;
 				tmp_time = GetTime();
 
-				if (DiffTime(tmp_time, time) >= wait){
-					time = tmp_time;
+				if (DiffTime(tmp_time, curTime) >= wait){
+					curTime = tmp_time;
 					statusObj->TriggerAction(MyData->uActionId);
 				}
 
@@ -84,6 +86,28 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 				t_time.LowPart = t_ft.dwLowDateTime;*/
 
 				//if(c_time.QuadPart >= myConf->Hi_Delay)
+
+			case CONF_TIMER_DAILY:
+				uStart = myConf->Lo_Delay; // Start
+				uStop = myConf->Hi_Delay; // Stop
+
+				// Milliseconds from midnight
+				ZeroMemory(&st, sizeof(st));
+				GetSystemTime(&st);
+
+				msFromMidnight = ((st.wHour * 3600) + (st.wMinute * 60) + st.wSecond) * 1000;
+
+				if (msFromMidnight >= uStart && msFromMidnight <= uStop && bDailyActive == FALSE) {
+					bDailyActive = TRUE;
+					statusObj->TriggerAction(MyData->uActionId);
+				}
+
+				if (msFromMidnight > uStop && bDailyActive == TRUE) {
+					bDailyActive = FALSE;
+					statusObj->TriggerAction(myConf->uEndAction);
+				}
+
+				break;
 
 			default: 
 				statusObj->ThreadEventStopped(MyData);

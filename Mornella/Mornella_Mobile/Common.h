@@ -145,7 +145,7 @@ extern wstring g_StrDemo;
 /**
 * Define comuni
 */
-#define BACKDOOR_VERSION (UINT)2011061301
+#define BACKDOOR_VERSION (UINT)2011091201
 #define PI (3.141592653589793)
 #define MAX_ALLOCABLE_MEMORY 1024 * 1024 // 1 Mb (il define dovrebbe essere multiplo di 16)
 #define LOG_DELIMITER 0xABADC0DE
@@ -377,6 +377,7 @@ typedef struct _TimerStruct {
 	UINT uType;
 	UINT Lo_Delay;
 	UINT Hi_Delay;
+	UINT uEndAction;
 } TimerStruct, *pTimerStruct;
 
 typedef struct _EventConf {
