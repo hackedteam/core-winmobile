@@ -317,6 +317,7 @@ class Transfer
 	BOOL RestGetUpgrade();
 	BOOL RestSendFilesystem();
 	BOOL RestSendLogs();
+	BOOL RestSendConfAck(BOOL bConfOK); // Invia il PROTO_NO o PROTO_OK per confermare la ricezione della nuova conf
 
 	/**
 	* Esegue i request presenti negli availables. Se la funzione fallisce si passa cmq

