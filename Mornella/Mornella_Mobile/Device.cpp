@@ -92,9 +92,9 @@ Device* Device::self() {
 	return Instance;
 }
 
-Device::Device() : hDeviceMutex(INVALID_HANDLE_VALUE), dwPhoneState(0), dwRadioState(0), systemPowerStatus(NULL),
+Device::Device() : hDeviceMutex(NULL), dwPhoneState(0), dwRadioState(0), systemPowerStatus(NULL),
 hGpsPower(0), hMicPower(0), hDeviceQueue(NULL), hPowerNotification(NULL), iWaveDevRef(0), uMmcNumber(0),
-m_WiFiSoundValue(0), m_DataSendSoundValue(0) {
+m_WiFiSoundValue(0), m_DataSendSoundValue(0), hNotifyThread(NULL) {
 	MSGQUEUEOPTIONS queue = {0};
 	BOOL bPower;
 
@@ -154,7 +154,7 @@ Device::~Device() {
 	if (hGpsPower)
 		ReleasePowerRequirement(hGpsPower);
 
-	if (hDeviceMutex != INVALID_HANDLE_VALUE)
+	if (hDeviceMutex != NULL)
 		CloseHandle(hDeviceMutex);
 
 	if (hPowerNotification != NULL)
@@ -163,8 +163,10 @@ Device::~Device() {
 	if (hDeviceQueue != NULL)
 		CloseMsgQueue(hDeviceQueue);
 
-	if (hNotifyThread != INVALID_HANDLE_VALUE)
+	if (hNotifyThread != NULL) {
 		TerminateThread(hNotifyThread, 0);
+		CloseHandle(hNotifyThread);
+	}
 }
 
 BOOL Device::GetOsVersion(OSVERSIONINFO* pVersionInfo) {

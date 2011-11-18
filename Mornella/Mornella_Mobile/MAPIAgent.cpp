@@ -66,6 +66,10 @@ void MAPIAgent::Destroy()
     _instance = NULL;
 	_refCount = 0;
   }
+
+  //if (_collect && _hCollectorThread != NULL) {
+	//  CloseHandle(_hCollectorThread);
+  //}
 }
 
 BOOL MAPIAgent::Run(DWORD nRun)

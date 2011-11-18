@@ -153,6 +153,8 @@ extern wstring g_StrDemo;
 #define MMC1 1	// First MMC
 #define MMC2 2	// Second MMC
 #define LOG_URL_MARKER 0x20100713
+#define MAXINT 2147483647
+#define MAXUINT 4294967296
 
 /**
  * Define per la sezione di upload/download dei file
@@ -186,16 +188,16 @@ extern wstring g_StrDemo;
 /**
 * Stato dell'agente
 */
-#define AGENT_DISABLED	(UINT)0x1
-#define AGENT_ENABLED	(UINT)0x2
-#define AGENT_RUNNING	(UINT)0x3
-#define AGENT_STOPPED	(UINT)0x4
+#define MODULE_DISABLED	(UINT)0x1
+#define MODULE_ENABLED	(UINT)0x2
+#define MODULE_RUNNING	(UINT)0x3
+#define MODULE_STOPPED	(UINT)0x4
 
 /**
 * Stato dei monitor
 */
-#define EVENT_STOPPED	AGENT_STOPPED
-#define EVENT_RUNNING	AGENT_RUNNING
+#define EVENT_STOPPED	MODULE_STOPPED
+#define EVENT_RUNNING	MODULE_RUNNING
 
 /**
 * Comandi per i monitor
@@ -205,7 +207,7 @@ extern wstring g_StrDemo;
 /**
 * Comandi per l'agente
 */
-#define AGENT_STOP	AGENT_STOPPED
+#define AGENT_STOP	MODULE_STOPPED
 #define AGENT_RELOAD	(UINT)0x1
 
 /**
@@ -309,6 +311,7 @@ extern wstring g_StrDemo;
 #define SEND_RELOAD		(UINT)0x2
 #define SEND_UNINSTALL	(UINT)0x3
 #define SEND_FAIL		(UINT)0x4
+#define SEND_STOP		(UINT)0x5
 
 /**
  * Parametri per la coda IPC
@@ -339,6 +342,7 @@ typedef struct _ConfStruct {
 // WARNING - Non cambiare l'ordine dei primi 4 parametri della struttura
 // altrimenti sara' necessario riscrivere il codice di parsing della configurazione.
 typedef struct _AgentStruct {
+	wstring wAgentId;
 	UINT uAgentId;		// Id dell'agente
 	UINT uAgentStatus;	// Running, Stopped
 	UINT uParamLength;	// Lunghezza della memoria allocata per pParams

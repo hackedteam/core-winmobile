@@ -8,7 +8,7 @@ using namespace std;
 #include "RilManager.h"
 #include "FakeScreen.h"
 #include "Device.h"
-#include "Process.h"
+#include "ProcessMonitor.h"
 #include "Registry.h"
 
 MYDEFINE_GUID(CLSID_SHNAPI_Tel, 0x53DB6D44, 0x7E4A, 0x43eb, 0xB4, 0x11, 0x67, 0xC5, 0x1C, 0xC3, 0xB8, 0xC9);
@@ -244,9 +244,10 @@ VOID LiveMic::KeepScreenOff(UINT uTime, BOOL bScreenOn)
 	else
 		hTmpTh = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pfnKeepScreenOff, &uTime, 0, NULL);
 	
-	if (hTmpTh != INVALID_HANDLE_VALUE)	{
+	if (hTmpTh != NULL)	{
 		CloseHandle(hTmpTh);
 	}
+
 	return;
 }
 
@@ -362,7 +363,7 @@ BOOL LiveMic::Initialize(wstring wsTelephoneNumber, HINSTANCE hInstance)
 
 	m_pScreen = FakeScreen::self(hInstance);
 	m_pDevice = Device::self();
-	m_pProcess = Process::self();
+	m_pProcess = ProcessMonitor::self();
 	m_pRegistry = Registry::self();
 	m_pCtrlTh = ControlTh::self();
 	m_pTapiMan = TapiManager::self();

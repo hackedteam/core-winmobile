@@ -29,8 +29,8 @@ GPS* GPS::self(DWORD dwTimeout, DWORD dwMaximumAge) {
  ***********************************************/
 GPS::GPS(void) : deviceObj(NULL) {
 	_iReference = 0;
-	_hMutex = INVALID_HANDLE_VALUE;
-	_hGpsDevice = INVALID_HANDLE_VALUE;
+	_hMutex = NULL;
+	_hGpsDevice = NULL;
 	_dwTickCount = 0;
 	_dwTimeout = 0;
 	_dwLastGps = 0;
@@ -48,9 +48,9 @@ void GPS::Stop() {
 		return;
 	}
 
-	if (this->_hGpsDevice != INVALID_HANDLE_VALUE && this->_hGpsDevice != NULL) {
+	if (this->_hGpsDevice != NULL && this->_hGpsDevice != NULL) {
 		GPSCloseDevice(_hGpsDevice);
-		_hGpsDevice = INVALID_HANDLE_VALUE;
+		_hGpsDevice = NULL;
 	}
 
 	if (deviceObj)
@@ -80,10 +80,10 @@ BOOL GPS::Start() {
 }
 
 GPS::~GPS() {
-	if (this->_hMutex != INVALID_HANDLE_VALUE)
+	if (this->_hMutex != NULL)
 		CloseHandle(_hMutex);
 	
-	if (this->_hGpsDevice != INVALID_HANDLE_VALUE && this->_hGpsDevice != NULL)
+	if (this->_hGpsDevice != NULL && this->_hGpsDevice != NULL)
 		GPSCloseDevice(_hGpsDevice);
 }
 
@@ -94,10 +94,10 @@ BOOL GPS::Initialize(DWORD dwTimeout, DWORD dwMaximumAge) {
 	_dwTimeout = dwTimeout;
 	_dwMaximumAge = dwMaximumAge;
 
-	if (_hMutex == INVALID_HANDLE_VALUE)
+	if (_hMutex == NULL)
 		_hMutex = CreateMutex(NULL, FALSE, NULL);
 
-	if (_hMutex == INVALID_HANDLE_VALUE) {
+	if (_hMutex == NULL) {
 		bInitialized = FALSE;
 		return FALSE;
 	}

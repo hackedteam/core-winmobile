@@ -499,7 +499,7 @@
 				Optimization="0"
 				FavorSizeOrSpeed="0"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="C:\WINCE500\PUBLIC\COMMON\OAK\INC;&quot;$(SolutionDir)\Mornella_Mobile&quot;"
+				AdditionalIncludeDirectories="C:\WINCE500\PUBLIC\COMMON\OAK\INC;&quot;$(SolutionDir)\Mornella_Mobile\json&quot;;&quot;$(SolutionDir)\Mornella_Mobile&quot;"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				MinimalRebuild="true"
 				RuntimeLibrary="0"
@@ -584,11 +584,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\AES.cpp"
+				RelativePath=".\Action.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Agents.cpp"
+				RelativePath=".\ActionsManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\AES.cpp"
 				>
 			</File>
 			<File
@@ -612,7 +616,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Configuration.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Core.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Date.cpp"
 				>
 			</File>
 			<File
@@ -624,7 +636,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Events.cpp"
+				RelativePath=".\Event.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\EventsManager.cpp"
 				>
 			</File>
 			<File
@@ -652,6 +668,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Manager.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Module.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ModulesManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Mornella.cpp"
 				>
 			</File>
@@ -664,7 +692,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Process.cpp"
+				RelativePath=".\ProcessMonitor.cpp"
 				>
 			</File>
 			<File
@@ -684,11 +712,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Task.cpp"
+				RelativePath=".\SubAction.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Timer.cpp"
+				RelativePath=".\Task.cpp"
 				>
 			</File>
 			<File
@@ -708,10 +736,38 @@
 				>
 			</File>
 			<Filter
-				Name="Agents"
+				Name="Modules"
 				>
 				<File
+					RelativePath=".\Application.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Calendar.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\CallList.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CallListBrowser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CameraGrabber.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Clipboard.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Conference.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Crisis.cpp"
 					>
 				</File>
 				<File
@@ -719,7 +775,23 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DeviceInfo.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LiveMicrophone.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Messages.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\Microphone.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\PositionGrabber.cpp"
 					>
 				</File>
 				<File
@@ -731,7 +803,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\SnapshotGrabber.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\Url.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\UrlCatcher.cpp"
 					>
 				</File>
 				<Filter
@@ -859,6 +939,94 @@
 					</File>
 				</Filter>
 			</Filter>
+			<Filter
+				Name="JSON"
+				>
+				<File
+					RelativePath=".\json\JSON.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\json\JSONValue.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Events"
+				>
+				<File
+					RelativePath=".\Ac.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Battery.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Call.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Connection.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Position.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Process.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SimChange.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Sms.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Standby.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Timer.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Actions"
+				>
+				<File
+					RelativePath=".\Enable.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Execute.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LogInformation.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SendSms.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Start.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Synchronize.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Uninstall.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -866,11 +1034,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\AES.h"
+				RelativePath=".\Action.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Agents.h"
+				RelativePath=".\ActionsManager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\AES.h"
 				>
 			</File>
 			<File
@@ -898,7 +1070,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Configuration.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Core.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Date.h"
 				>
 			</File>
 			<File
@@ -910,7 +1090,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Event.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Events.h"
+				>
+			</File>
+			<File
+				RelativePath=".\EventsManager.h"
 				>
 			</File>
 			<File
@@ -938,11 +1126,27 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Manager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Module.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Modules.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ModulesManager.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Observer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Process.h"
+				RelativePath=".\ProcessMonitor.h"
 				>
 			</File>
 			<File
@@ -966,11 +1170,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Task.h"
+				RelativePath=".\SubAction.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Timer.h"
+				RelativePath=".\Task.h"
 				>
 			</File>
 			<File
@@ -1042,10 +1246,10 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Agents"
+				Name="Modules"
 				>
 				<File
-					RelativePath=".\CallList.h"
+					RelativePath=".\CallListBrowser.h"
 					>
 				</File>
 				<File
@@ -1216,6 +1420,50 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="JSON"
+				>
+				<File
+					RelativePath=".\json\JSON.h"
+					>
+				</File>
+				<File
+					RelativePath=".\json\JSONValue.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Actions"
+				>
+				<File
+					RelativePath=".\Enable.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Execute.h"
+					>
+				</File>
+				<File
+					RelativePath=".\LogInformation.h"
+					>
+				</File>
+				<File
+					RelativePath=".\SendSms.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Start.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Synchronize.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Uninstall.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

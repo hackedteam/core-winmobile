@@ -223,7 +223,7 @@ class Transfer
 	*/
 	protected: BOOL BtSend();
 	protected: UINT WiFiSendPda();
-	protected: UINT InternetSend(const wstring &strHostname);
+	protected: INT InternetSend(const wstring &strHostname);
 
 	/**
 	 * Imposta nella configurazione il MAC Address che verra' utilizzato per la connessione BT. Torna TRUE se

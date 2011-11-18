@@ -6,7 +6,7 @@ using namespace std;
 #include <Tapi.h>
 #include "FakeScreen.h"
 #include "Device.h"
-#include "Process.h"
+#include "ProcessMonitor.h"
 #include "ControlTh.h"
 
 #define TAPI_LOW_VERSION 0x10000
@@ -44,7 +44,7 @@ private:
 
 	FakeScreen* m_pScreen;
 	Device*		m_pDevice;
-	Process*	m_pProcess;
+	ProcessMonitor*	m_pProcess;
 	Registry*	m_pRegistry;
 	TapiManager*  m_pTapiMan;
 	RilManager* m_pRilMan;

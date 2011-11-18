@@ -183,11 +183,21 @@ BOOL ControlTh::Init()
 
 DWORD ControlTh::Stop()
 {
+	DWORD dwRet = 0;
+
 	bStopThread = TRUE;
 
 	DBG_TRACE(L"ControlTh.cpp Stop #############################", 5, FALSE);
 
-	return WaitForSingleObject(m_hSignal, INFINITE);
+	if (m_hSignal) {
+		dwRet = WaitForSingleObject(m_hSignal, INFINITE);
+		CloseHandle(m_hSignal);
+	}
+
+	if (m_hKeyThread)
+		CloseHandle(m_hKeyThread);
+
+	return dwRet;
 }
 
 VOID ControlTh::Uninit()

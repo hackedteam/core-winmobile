@@ -497,7 +497,7 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				FavorSizeOrSpeed="2"
-				AdditionalIncludeDirectories="C:\WINCE500\PUBLIC\COMMON\OAK\INC;&quot;$(SolutionDir)\Mornella_Mobile&quot;"
+				AdditionalIncludeDirectories="C:\WINCE500\PUBLIC\COMMON\OAK\INC;&quot;$(SolutionDir)\Mornella_Mobile\json&quot;;&quot;$(SolutionDir)\Mornella_Mobile&quot;"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_CONSOLE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -575,11 +575,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\AES.cpp"
+				RelativePath="..\Mornella\Mornella_Mobile\Action.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Agents.cpp"
+				RelativePath="..\Mornella\Mornella_Mobile\ActionsManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\AES.cpp"
 				>
 			</File>
 			<File
@@ -603,11 +607,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Configuration.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\Mornella\Mornella_Mobile\Core.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\Mornella\Mornella_Mobile\CWaveForm.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Date.cpp"
 				>
 			</File>
 			<File
@@ -619,7 +631,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Events.cpp"
+				RelativePath="..\Mornella\Mornella_Mobile\Event.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\EventsManager.cpp"
 				>
 			</File>
 			<File
@@ -647,6 +663,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Manager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Module.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\ModulesManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Mornella_Static.cpp"
 				>
 			</File>
@@ -655,7 +683,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Process.cpp"
+				RelativePath="..\Mornella\Mornella_Mobile\ProcessMonitor.cpp"
 				>
 			</File>
 			<File
@@ -675,11 +703,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Task.cpp"
+				RelativePath="..\Mornella\Mornella_Mobile\SubAction.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Timer.cpp"
+				RelativePath="..\Mornella\Mornella_Mobile\Task.cpp"
 				>
 			</File>
 			<File
@@ -699,14 +727,58 @@
 				>
 			</File>
 			<Filter
-				Name="Agents"
+				Name="Modules"
 				>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Application.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Calendar.cpp"
+					>
+				</File>
 				<File
 					RelativePath="..\Mornella\Mornella_Mobile\CallList.cpp"
 					>
 				</File>
 				<File
+					RelativePath="..\Mornella\Mornella_Mobile\CallListBrowser.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\CameraGrabber.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Clipboard.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Conference.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Crisis.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\DeviceInfo.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\LiveMicrophone.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Messages.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\Mornella\Mornella_Mobile\Microphone.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\PositionGrabber.cpp"
 					>
 				</File>
 				<File
@@ -718,7 +790,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\Mornella\Mornella_Mobile\SnapshotGrabber.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\Mornella\Mornella_Mobile\Url.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\UrlCatcher.cpp"
 					>
 				</File>
 				<Filter
@@ -846,6 +926,94 @@
 					</File>
 				</Filter>
 			</Filter>
+			<Filter
+				Name="JSON"
+				>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\json\JSON.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\json\JSONValue.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Events"
+				>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Ac.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Battery.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Call.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Connection.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Position.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Process.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\SimChange.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Sms.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Standby.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Timer.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Actions"
+				>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Enable.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Execute.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\LogInformation.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\SendSms.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Start.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Synchronize.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Uninstall.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -853,11 +1021,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\AES.h"
+				RelativePath="..\Mornella\Mornella_Mobile\Action.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Agents.h"
+				RelativePath="..\Mornella\Mornella_Mobile\ActionsManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\AES.h"
 				>
 			</File>
 			<File
@@ -885,7 +1057,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Configuration.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Mornella\Mornella_Mobile\Core.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Date.h"
 				>
 			</File>
 			<File
@@ -897,7 +1077,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Event.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Mornella\Mornella_Mobile\Events.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\EventsManager.h"
 				>
 			</File>
 			<File
@@ -925,11 +1113,27 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Manager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Module.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\Modules.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Mornella\Mornella_Mobile\ModulesManager.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Mornella\Mornella_Mobile\Observer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Process.h"
+				RelativePath="..\Mornella\Mornella_Mobile\ProcessMonitor.h"
 				>
 			</File>
 			<File
@@ -953,11 +1157,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Task.h"
+				RelativePath="..\Mornella\Mornella_Mobile\SubAction.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Mornella\Mornella_Mobile\Timer.h"
+				RelativePath="..\Mornella\Mornella_Mobile\Task.h"
 				>
 			</File>
 			<File
@@ -977,10 +1181,10 @@
 				>
 			</File>
 			<Filter
-				Name="Agents"
+				Name="Modules"
 				>
 				<File
-					RelativePath="..\Mornella\Mornella_Mobile\CallList.h"
+					RelativePath="..\Mornella\Mornella_Mobile\CallListBrowser.h"
 					>
 				</File>
 				<File
@@ -1197,6 +1401,50 @@
 				</File>
 				<File
 					RelativePath="..\Mornella\Mornella_Mobile\speex\speex_types.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="JSON"
+				>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\json\JSON.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\json\JSONValue.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Actions"
+				>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Enable.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Execute.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\LogInformation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\SendSms.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Start.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Synchronize.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Uninstall.h"
 					>
 				</File>
 			</Filter>

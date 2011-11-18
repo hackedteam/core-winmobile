@@ -7,7 +7,7 @@ Observer* Observer::Instance = NULL;
 volatile LONG Observer::lLock = 0;
 
 Observer::Observer() : hQueueWrite(NULL), hQueueRead(NULL),
-hObserverMutex(INVALID_HANDLE_VALUE), pRegistered(NULL), pQueue(NULL), 
+hObserverMutex(NULL), pRegistered(NULL), pQueue(NULL), 
 m_iQueueCommand(EVENT_NOT_INTERESTING), m_pIpcMsg(NULL), dwMsgLen(0), bRefresh(TRUE) {
 	dwQueueBuf = 4 * 1024;
 
@@ -38,7 +38,7 @@ m_iQueueCommand(EVENT_NOT_INTERESTING), m_pIpcMsg(NULL), dwMsgLen(0), bRefresh(T
 }
 
 Observer::~Observer() {
-	if (hObserverMutex != INVALID_HANDLE_VALUE)
+	if (hObserverMutex != NULL)
 		CloseHandle(hObserverMutex);
 
 	if (hQueueWrite)

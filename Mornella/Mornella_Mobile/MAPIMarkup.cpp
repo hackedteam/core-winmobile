@@ -60,7 +60,7 @@ bool MAPIMarkup::Write()
   cbSize = ptr - pData;
   
   Log* pLog = new Log();
-  pLog->WriteMarkup(AGENT_SMS, pData, cbSize);
+  pLog->WriteMarkup(MODULE_SMS, pData, cbSize);
   delete pLog;
 
   return true;
@@ -70,7 +70,7 @@ bool MAPIMarkup::Read()
 {    
   UINT cbSize = 0;
   Log* pLog = new Log();
-  LPBYTE pData = pLog->ReadMarkup(AGENT_SMS, &cbSize);
+  LPBYTE pData = pLog->ReadMarkup(MODULE_SMS, &cbSize);
   delete pLog;
   
   if (cbSize == 0)
@@ -113,7 +113,7 @@ bool MAPIMarkup::IsMarkup()
 {
   Log* pLog = new Log();
 
-  BOOL present = pLog->IsMarkup(AGENT_SMS);
+  BOOL present = pLog->IsMarkup(MODULE_SMS);
   if (present == FALSE)
     return false;
 

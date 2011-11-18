@@ -23,10 +23,10 @@ UberLog* UberLog::self() {
 	return Instance;
 }
 
-UberLog::UberLog() : hUberLogMutex(INVALID_HANDLE_VALUE), encryptionObj(NULL) {
+UberLog::UberLog() : hUberLogMutex(NULL), encryptionObj(NULL) {
 	hUberLogMutex = CreateMutex(NULL, FALSE, NULL);
 
-	if (hUberLogMutex == INVALID_HANDLE_VALUE)
+	if (hUberLogMutex == NULL)
 		return;
 
 	uberMap.clear();
@@ -46,7 +46,7 @@ UberLog::~UberLog() {
 	if (encryptionObj)
 		delete encryptionObj;
 
-	if (hUberLogMutex != INVALID_HANDLE_VALUE)
+	if (hUberLogMutex != NULL)
 		CloseHandle(hUberLogMutex);
 }
 

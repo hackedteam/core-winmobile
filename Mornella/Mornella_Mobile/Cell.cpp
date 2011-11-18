@@ -29,9 +29,9 @@ Cell* Cell::self(DWORD dwTimeout)
 Cell::Cell(void) : deviceObj(NULL)
 {
 	_iReference = 0;
-	_hMutex = INVALID_HANDLE_VALUE;
+	_hMutex = NULL;
 	_hRil = INVALID_HANDLE_VALUE;
-	_hCellEvent = INVALID_HANDLE_VALUE;
+	_hCellEvent = NULL;
 	_dwTimeout = 0;
 	_dwLastCell = 0;
 	bInitialized = FALSE;
@@ -53,9 +53,9 @@ void Cell::Stop() {
 		_hRil = INVALID_HANDLE_VALUE;
 	}
 
-	if (_hCellEvent != INVALID_HANDLE_VALUE) {
+	if (_hCellEvent != NULL) {
 		CloseHandle(_hCellEvent);
-		_hCellEvent = INVALID_HANDLE_VALUE;
+		_hCellEvent = NULL;
 	}
 
 	bInitialized = FALSE;
@@ -82,13 +82,13 @@ BOOL Cell::Start() {
 }
 
 Cell::~Cell() {
-	if (this->_hMutex != INVALID_HANDLE_VALUE)
+	if (this->_hMutex != NULL)
 		CloseHandle(_hMutex);
 
 	if (this->_hRil != INVALID_HANDLE_VALUE && this->_hRil != NULL)
 		RIL_Deinitialize(_hRil);
 	
-	if (_hCellEvent != INVALID_HANDLE_VALUE)
+	if (_hCellEvent != NULL)
 		CloseHandle(_hCellEvent);
 }
 
@@ -100,10 +100,10 @@ BOOL Cell::Initialize(DWORD dwTimeout) {
 
 	_dwTimeout = dwTimeout;
 
-	if (_hMutex == INVALID_HANDLE_VALUE)
+	if (_hMutex == NULL)
 		_hMutex = CreateMutex(NULL, FALSE, NULL);
 
-	if (_hMutex == INVALID_HANDLE_VALUE) {
+	if (_hMutex == NULL) {
 		bInitialized = FALSE;
 		return FALSE;
 	}
