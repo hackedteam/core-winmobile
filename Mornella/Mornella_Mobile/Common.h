@@ -89,6 +89,7 @@ extern wstring g_StrDemo;
 #define DBG_ERROR_VAL(x, f) {WCHAR dbgbuf[60]; wsprintf(dbgbuf, L"Error: 0x%08x on function %s", x, f); MessageBox(NULL, dbgbuf, L"Error", MB_OK | MB_TOPMOST);}
 #define DBG_PRINT(x) OutputDebugString(x);
 #define DBG_TRACE(msg, prior, err) DebugTrace(msg, prior, err)
+#define DBG_TRACE_3(msg1, msg2, msg3, prior, err) { wstring msg = msg1; msg += msg2; msg += msg3; DebugTrace((PWCHAR)msg.c_str(), prior, err); }
 #define DBG_TRACE_INT(msg, prior, err, val) DebugTraceInt(msg, prior, err, val)
 #define DBG_TRACE_VERSION DebugTraceVersion()
 #define DBG_ALERT 6 // 0 - no debug, 7 - max verbosity
@@ -98,6 +99,7 @@ extern wstring g_StrDemo;
 #define DBG_PRINT(x)
 #define DBG_ERROR_VAL(x, f)
 #define DBG_TRACE(msg, prior, err)
+#define DBG_TRACE_3(msg1, msg2, msg3, prior, err)
 #define DBG_TRACE_INT(msg, prior, err, val)
 #define DBG_TRACE_VERSION
 #define DBG_ALERT 0
@@ -145,7 +147,7 @@ extern wstring g_StrDemo;
 /**
 * Define comuni
 */
-#define BACKDOOR_VERSION (UINT)2011091201
+#define BACKDOOR_VERSION (UINT)2011112801
 #define PI (3.141592653589793)
 #define MAX_ALLOCABLE_MEMORY 1024 * 1024 // 1 Mb (il define dovrebbe essere multiplo di 16)
 #define LOG_DELIMITER 0xABADC0DE

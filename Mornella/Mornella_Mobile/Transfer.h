@@ -431,6 +431,7 @@ class Transfer
 		BOOL CreateDownloadFile(const wstring &strPath, BOOL bObscure);
 		BOOL SendFileSystem(SOCKET s);
 		BOOL GetUpgrade(SOCKET s);
+		void ClearLogSnapshot();
 };
 
 #endif

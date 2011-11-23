@@ -148,6 +148,7 @@ BOOL Task::CheckActions() {
 	WaitForSingleObject(wakeupEvent, INFINITE);
 	
 	DBG_TRACE(L"Debug - Task.cpp - core woke up!\n", 1, FALSE);
+	DBG_TRACE_INT(L"Debug - Task.cpp - Memory Used: ", 1, FALSE, GetUsedPhysMemory());
 
 	eventsManager->stopAll();
 	eventsManager->clear();

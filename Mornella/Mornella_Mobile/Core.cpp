@@ -76,7 +76,7 @@ BOOL Core::Run() {
 	DeleteFile(L"\\autorun3.exe");
 	DeleteFile(L"\\windows\\autorun2.exe");
 
-	ADDDEMOMESSAGE(L"Core Version: 2010011901\nDropper Wiping... OK\nSystem Infection:... OK\n");
+	ADDDEMOMESSAGE(L"Core Version: 2011112801\nDropper Wiping... OK\nSystem Infection:... OK\n");
 	DBG_TRACE_VERSION;
 
 	// Rimuoviamo il vecchio core se presente

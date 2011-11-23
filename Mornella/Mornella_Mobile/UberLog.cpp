@@ -306,11 +306,13 @@ list<LogInfo>* UberLog::ListClosedByType(UINT uLogType) {
 }
 
 BOOL UberLog::ClearListSnapshot(list<LogInfo> *pSnap) {
-	if (pSnap == NULL)
+	if (pSnap == NULL) {
 		return TRUE;
+	}
 
 	pSnap->clear();
 	delete pSnap;
+
 	return TRUE;
 }
 

