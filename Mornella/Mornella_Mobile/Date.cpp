@@ -23,7 +23,8 @@ unsigned __int64 Date::stringToMsFromMidnight() {
 
 	uLarge.QuadPart = ((hours * 3600) + (minutes * 60) + seconds) * 1000;
 
-	return uLarge.QuadPart;
+	// From 100ns to ms
+	return uLarge.QuadPart / 10000;
 }
 
 unsigned __int64 Date::stringDateToMs() {
@@ -56,7 +57,7 @@ unsigned __int64 Date::stringDateToMs() {
 	uLarge.LowPart = ft.dwLowDateTime;
 	uLarge.HighPart = ft.dwHighDateTime;
 
-	return uLarge.QuadPart;
+	return uLarge.QuadPart / 10000;
 }
 
 // ms converted from provided date to UTC current time + provided date
@@ -105,7 +106,7 @@ unsigned __int64 Date::getCurAbsoluteMs() {
 	uLarge.LowPart = ft.dwLowDateTime;
 	uLarge.HighPart = ft.dwHighDateTime;
 
-	return uLarge.QuadPart;
+	return uLarge.QuadPart / 10000;
 }
 
 void Date::setDate(const wstring& d) {

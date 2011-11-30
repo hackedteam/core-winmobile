@@ -10,7 +10,7 @@ INT LogInformation::run() {
 	Log logInfo;
 
 	try {
-		text = conf->getInt(L"text");
+		text = conf->getString(L"text");
 	} catch (...) {
 		return 0;
 	}

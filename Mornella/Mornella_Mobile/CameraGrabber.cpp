@@ -55,13 +55,17 @@ DWORD WINAPI CameraModule(LPVOID lpParam) {
 			case OUT_ERROR_FILTERAUTOCONNECT:
 				dwModeRear = MODE_CAPTURE;
 				break;
+
 			case OUT_ERROR_LOADCAMDRIVER:  // NB: prvare a mettere una AgentSleep invece di disabilitare la cam
 				devCam.DisableRearCam();
 				break;
+
 			case OUT_ERROR_EXCEPTION:
 				devCam.DisableRearCam();
 				break;
-			default: break;
+
+			default: 
+				break;
 		}	
 
 		devCam.ReleaseCam1PowerState();
@@ -91,7 +95,8 @@ DWORD WINAPI CameraModule(LPVOID lpParam) {
 				devCam.DisableFrontCam();
 				break;
 
-			default: break;
+			default: 
+				break;
 		}	
 
 		devCam.ReleaseCam2PowerState();

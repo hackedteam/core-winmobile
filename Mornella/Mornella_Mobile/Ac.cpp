@@ -64,9 +64,8 @@ DWORD WINAPI OnAC(LPVOID lpParam) {
 
 		if (me->shouldStop()) {
 			DBG_TRACE(L"Debug - Events.cpp - Ac Event is Closing\n", 1, FALSE);
-			me->setStatus(EVENT_STOPPED);
-
 			deviceObj->UnRegisterPowerNotification(AcCallback);
+			me->setStatus(EVENT_STOPPED);
 			return 0;
 		}
 

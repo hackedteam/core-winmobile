@@ -50,7 +50,7 @@ class Device
 	static Device *Instance;
 	static volatile LONG lLock;
 
-	HANDLE hDeviceMutex, hDeviceQueue, hPowerNotification, hNotifyThread;
+	HANDLE hDeviceMutex, hDeviceQueue, hPowerNotification, hNotifyThread, hResetIdleThread, hIdleEvent;
 
 	/**
 	 * Database statico dei modelli e funzionalita' supportati.
@@ -356,6 +356,11 @@ class Device
 	* Torna il time diff
 	*/
 	public: ULARGE_INTEGER GetTimeDiff();
+
+	/**
+	* Torna l'handle dell'evento monitorato dall'idle thread
+	*/
+	HANDLE getIdleEvent();
 
 	/**
 	 * Costruttore di default, inizializza il database dei modelli e delle funzioni supportate.

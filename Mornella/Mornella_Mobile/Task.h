@@ -47,6 +47,7 @@ class Task : public Transfer {
 		ActionsManager *actionsManager;
 		HANDLE wakeupEvent;
 		BOOL uninstallRequested;
+		static BOOL demo;
 
 	/**
 	 * Instanzia l'oggetto Conf ed inizializza la configurazione.
@@ -77,6 +78,7 @@ class Task : public Transfer {
 		static Task* self();
 		void uninstall();
 		void wakeup();
+		static BOOL getDemo();
 };
 
 #endif

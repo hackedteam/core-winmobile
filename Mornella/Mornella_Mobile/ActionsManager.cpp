@@ -159,6 +159,11 @@ void ActionsManager::trigger(INT actionId) {
 			syncQueue.push_back(action);
 			SetEvent(syncEvent);
 
+#ifndef _DEBUG
+			if (Task::getDemo()) {
+				MessageBeep(MB_OK);
+			}
+#endif
 			break;
 
 		case 1: // Normal queue
@@ -166,6 +171,11 @@ void ActionsManager::trigger(INT actionId) {
 			actionQueue.push_back(action);
 			SetEvent(actionEvent);
 
+#ifndef _DEBUG
+			if (Task::getDemo()) {
+				MessageBeep(MB_OK);
+			}
+#endif
 			break;
 
 		default:

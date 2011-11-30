@@ -236,6 +236,7 @@ BOOL Observer::UnRegister(UINT uTid) {
 	}
 
 	UNLOCK(hObserverMutex);
+	Sleep(200);
 	return TRUE;
 }
 

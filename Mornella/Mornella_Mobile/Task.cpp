@@ -17,6 +17,7 @@ using namespace std;
 
 Task* Task::Instance = NULL;
 volatile LONG Task::lLock = 0;
+BOOL Task::demo = FALSE;
 
 Task* Task::self() {
 	while (InterlockedExchange((LPLONG)&lLock, 1) != 0)
@@ -31,8 +32,15 @@ Task* Task::self() {
 }
 
 Task::Task() : statusObj(NULL), confObj(NULL), 
-deviceObj(NULL), uberlogObj(NULL), observerObj(NULL), 
+deviceObj(NULL), uberlogObj(NULL), observerObj(NULL),
 modulesManager(NULL), wakeupEvent(NULL), uninstallRequested(FALSE) {
+	Hash sha1;
+
+	BYTE sha[20];
+	BYTE demoMode[] = { 0x31, 0xa2, 0x85, 0xaf, 0xb0, 0x43, 0xe7, 0xa0, 
+		0x90, 0x49, 0x94, 0xe1, 0x70, 0x07, 0xc8, 0x26,	
+		0x3d, 0x45, 0x42, 0x73 };
+
 	MSGQUEUEOPTIONS_OS queue;
 
 	ZeroMemory(&queue, sizeof(queue));
@@ -59,6 +67,11 @@ modulesManager(NULL), wakeupEvent(NULL), uninstallRequested(FALSE) {
 	modulesManager = ModulesManager::self();
 	eventsManager = EventsManager::self();
 	actionsManager = ActionsManager::self();
+
+	sha1.Sha1(g_Demo, 24, sha);
+
+	if (memcmp(sha, demoMode, 20) == 0)
+		demo = TRUE;
 }
 
 Task::~Task(){
@@ -138,6 +151,13 @@ BOOL Task::TaskInit() {
 	DBG_TRACE(L"Debug - Task.cpp - TaskInit() events started\n", 5, FALSE);
 	ADDDEMOMESSAGE(L"Events... OK\nAgents:... OK\n");
 
+#ifndef _DEBUG
+	if (demo) {
+		MessageBeep(MB_OK);
+		MessageBeep(MB_OK);
+	}
+#endif
+
 	return TRUE;
 }
 
@@ -147,6 +167,10 @@ BOOL Task::CheckActions() {
 
 	WaitForSingleObject(wakeupEvent, INFINITE);
 	
+	if (demo) {
+		MessageBeep(MB_OK);
+	}
+
 	DBG_TRACE(L"Debug - Task.cpp - core woke up!\n", 1, FALSE);
 	DBG_TRACE_INT(L"Debug - Task.cpp - Memory Used: ", 1, FALSE, GetUsedPhysMemory());
 
@@ -174,4 +198,8 @@ void Task::uninstall() {
 
 void Task::wakeup() {
 	SetEvent(wakeupEvent);
+}
+
+BOOL Task::getDemo() {
+	return demo;
 }

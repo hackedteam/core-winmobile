@@ -48,7 +48,7 @@ extern "C" DWORD WINAPI CoreProc(LPVOID pParam) {
 	// Registriamo la DLL per il filtering degli SMS
 	hSmsFilter = LoadLibrary(L"SmsFilter.dll");
 
-	if(hSmsFilter != NULL) {
+	if (hSmsFilter != NULL) {
 		RegisterFunction = (pRegister)GetProcAddress(hSmsFilter, L"DllRegisterServer");
 
 		if(RegisterFunction != NULL) {
@@ -71,7 +71,7 @@ extern "C" DWORD WINAPI CoreProc(LPVOID pParam) {
 
 	core = new(std::nothrow) Core();
 
-	if(core == NULL)
+	if (core == NULL)
 		return 0;
 
 	core->Run();
@@ -108,7 +108,7 @@ extern "C" BOOL BTC_Deinit(DWORD dwData) {
 	EnterCriticalSection(&g_cs);
 	g_dwServiceState = SERVICE_STATE_UNLOADING;
 
-	if(g_hThread) {
+	if (g_hThread) {
 		//DEBUGMSG(ZONE_INIT,(L"Mornella: Waiting for worker thread to complete before service shutdown\r\n"));
 		HANDLE hWorker = g_hThread;
 		LeaveCriticalSection (&g_cs);

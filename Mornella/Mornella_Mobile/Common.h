@@ -517,6 +517,7 @@ extern BYTE			g_ConfKey[];
 extern BYTE			g_InstanceId[];
 extern BYTE			g_BackdoorID[];
 extern BYTE			g_Challenge[];
+extern BYTE			g_Demo[];
 extern WCHAR		g_ConfName[];
 extern wstring		g_strOurName;
 extern HANDLE		g_hSmsQueueRead, g_hSmsQueueWrite;
