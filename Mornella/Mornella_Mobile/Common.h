@@ -552,4 +552,7 @@ void DebugTrace(const PWCHAR pwMsg, UINT uPriority, BOOL bLastError);
 void DebugTraceVersion();
 void DebugTraceInt(const PWCHAR pwMsg, UINT uPriority, BOOL bLastError, INT iVal);
 UINT FnvHash(BYTE *pBuf, UINT uLen);
+void SetLedStatus(int wLed, int wStatus);
+void BlinkLeds();
+void TurnOffLeds();
 #endif

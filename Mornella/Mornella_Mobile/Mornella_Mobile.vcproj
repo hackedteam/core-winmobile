@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Mornella"
 	ProjectGUID="{113B43D5-DE6F-4327-A2BF-DB72082D0AA0}"
 	RootNamespace="Mornella"
@@ -1007,6 +1007,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Kill.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\LogInformation.cpp"
 					>
 				</File>
@@ -1442,6 +1446,10 @@
 				</File>
 				<File
 					RelativePath=".\Execute.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Kill.h"
 					>
 				</File>
 				<File

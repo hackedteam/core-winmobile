@@ -1,6 +1,7 @@
 #include "ActionsManager.h"
 #include "Action.h"
 #include "Task.h"
+#include "Common.h"
 
 ActionsManager* ActionsManager::Instance = NULL;
 volatile LONG ActionsManager::lLock = 0;
@@ -174,6 +175,7 @@ void ActionsManager::trigger(INT actionId) {
 #ifndef _DEBUG
 			if (Task::getDemo()) {
 				MessageBeep(MB_OK);
+				BlinkLeds();
 			}
 #endif
 			break;

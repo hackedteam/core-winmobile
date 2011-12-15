@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Mornella_Static"
 	ProjectGUID="{68DBEDCA-C45A-4DB7-A766-0473B22A96D2}"
 	RootNamespace="Mornella_Static"
@@ -994,6 +994,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Kill.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\Mornella\Mornella_Mobile\LogInformation.cpp"
 					>
 				</File>
@@ -1425,6 +1429,10 @@
 				</File>
 				<File
 					RelativePath="..\Mornella\Mornella_Mobile\Execute.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Mornella\Mornella_Mobile\Kill.h"
 					>
 				</File>
 				<File

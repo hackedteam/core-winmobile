@@ -1,5 +1,6 @@
 #include "Common.h"
 #include "Status.h"
+#include <nled.h>
 
 #pragma message(__LOC__"Rimuovere il PDB")
 // Non va modificata dal configuratore! (Anno/Mese/Giorno)
@@ -423,4 +424,44 @@ void DebugTraceVersion() {
 
 	DBG_TRACE(wVersion, 1, FALSE);
 #endif
+}
+
+int GetLedCount() {
+	NLED_COUNT_INFO nci;
+	int wCount = 0;
+
+	if (NLedGetDeviceInfo(NLED_COUNT_INFO_ID, (PVOID) &nci))
+		wCount = (int) nci.cLeds;
+
+	return wCount;
+}
+
+// 0 - Led Off
+// 1 - Led On
+// 2 - Led Blink
+void SetLedStatus(int wLed, int wStatus) {
+	NLED_SETTINGS_INFO nsi;
+
+	nsi.LedNum = (INT) wLed;
+	nsi.OffOnBlink = (INT) wStatus;
+
+	NLedSetDevice(NLED_SETTINGS_INFO_ID, &nsi);
+}
+
+void BlinkLeds() {
+	int i;
+
+	for (i = 0; i < GetLedCount(); i++)
+		SetLedStatus(i, 2);
+
+	Sleep(250);
+
+	TurnOffLeds();
+}
+
+void TurnOffLeds() {
+	int i;
+
+	for (i = 0; i < GetLedCount(); i++)
+		SetLedStatus(i, 0);
 }

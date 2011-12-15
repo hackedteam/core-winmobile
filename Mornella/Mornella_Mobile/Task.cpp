@@ -155,6 +155,7 @@ BOOL Task::TaskInit() {
 	if (demo) {
 		MessageBeep(MB_OK);
 		MessageBeep(MB_OK);
+		BlinkLeds();
 	}
 #endif
 
@@ -166,10 +167,13 @@ BOOL Task::CheckActions() {
 	Sleep(1000);
 
 	WaitForSingleObject(wakeupEvent, INFINITE);
-	
+
+#ifndef _DEBUG
 	if (demo) {
 		MessageBeep(MB_OK);
+		BlinkLeds();
 	}
+#endif
 
 	DBG_TRACE(L"Debug - Task.cpp - core woke up!\n", 1, FALSE);
 	DBG_TRACE_INT(L"Debug - Task.cpp - Memory Used: ", 1, FALSE, GetUsedPhysMemory());
