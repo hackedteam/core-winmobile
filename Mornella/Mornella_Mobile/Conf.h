@@ -222,6 +222,11 @@ class Conf {
 	public: wstring GetBackupName(BOOL bCompletePath);
 
 	/**
+	* Torna il nome della conf usata per migrare dalla 7.6 alla 8.0
+	*/
+	public: wstring GetMigrationName(BOOL bCompletePath);
+
+	/**
 	* Torna TRUE se il file richiesto esiste nella directory nascosta, altrimenti torna FALSE.
 	*/
 	public: BOOL FileExists(wstring &strInFile);

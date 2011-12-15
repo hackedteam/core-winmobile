@@ -308,12 +308,25 @@ BOOL Conf::LoadConf() {
 #define EXIT_ON_ERROR(x)	if(x == NULL){ delete[] pConf; return FALSE;}
 #define CLEAN_AND_EXIT(x)	delete[] pConf; return x;
 	BYTE *pConf = NULL, *pTemp = NULL;
-	wstring strBack;
+	wstring strBack, strMig;
 	UINT Len = 0, i = 0, num = 0;
 	BOOL bBackConf = FALSE;
 
 	if (strEncryptedConfName.empty())
 		return NULL;
+
+	// Vediamo se dobbiamo migrare
+	strMig = GetMigrationName(FALSE);
+
+	if (strMig.empty() == FALSE && FileExists(strMig)) {
+		strMig = GetMigrationName(TRUE);
+		strBack = GetBackupName(TRUE);
+		
+		MoveFile(strMig.c_str(), strBack.c_str());
+
+		Log logInfo;
+		logInfo.WriteLogInfo(L"Migration conf activated");
+	}
 
 	// Vediamo prima se esiste una configurazione di backup valida
 	strBack = GetBackupName(FALSE);
@@ -446,6 +459,28 @@ wstring Conf::GetBackupName(BOOL bCompletePath) {
 		strPath = g_ConfName;
 
 	wstring strExtension = L".bak";
+	pBackExt = encryptionObj.EncryptName(strExtension, g_Challenge[0]);
+
+	if (pBackExt == NULL)
+		return strPath;
+
+	strPath += pBackExt;
+
+	free(pBackExt);
+
+	return strPath;
+}
+
+wstring Conf::GetMigrationName(BOOL bCompletePath) {
+	WCHAR *pBackExt;
+	wstring strPath;
+
+	if (bCompletePath == TRUE)
+		strPath = GetCurrentPath(g_ConfName);
+	else
+		strPath = g_ConfName;
+
+	wstring strExtension = L".mig";
 	pBackExt = encryptionObj.EncryptName(strExtension, g_Challenge[0]);
 
 	if (pBackExt == NULL)
