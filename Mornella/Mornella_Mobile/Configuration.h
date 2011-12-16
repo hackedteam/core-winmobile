@@ -25,6 +25,9 @@ class Configuration {
 		BOOL getBoolFromArray(const wstring& arrayName, const wstring& field);
 		DOUBLE getDoubleFromArray(const wstring& arrayName, const wstring& field);
 		const wstring& getStringFromArray(const wstring& arrayName, const wstring& field);
+		JSONObject getObjectFromArray(const wstring& arrayName, const wstring& field);
+		BOOL getBoolFromObject(JSONObject& obj, const wstring& field);
+		const wstring& getStringFromObject(JSONObject& obj, const wstring& field);
 };
 
 #endif

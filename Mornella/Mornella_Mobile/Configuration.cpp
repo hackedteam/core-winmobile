@@ -78,6 +78,43 @@ BOOL Configuration::getBoolFromArray(const wstring& arrayName, const wstring& fi
 	return static_cast<BOOL>(val->AsBool());
 }
 
+JSONObject Configuration::getObjectFromArray(const wstring& arrayName, const wstring& field) {
+	JSONValue *c = json[arrayName];
+
+	if (c == NULL || c->IsObject() == FALSE) {
+		throw new exception();
+	}
+
+	JSONObject arr = c->AsObject();
+	JSONValue *val = arr[field];
+
+	if (val == NULL || val->IsObject() == FALSE) {
+		throw new exception();
+	}
+
+	return val->AsObject();
+}
+
+BOOL Configuration::getBoolFromObject(JSONObject& obj, const wstring& field) {
+	JSONValue *val = obj[field];
+
+	if (val == NULL || val->IsBool() == FALSE) {
+		throw new exception();
+	}
+
+	return static_cast<BOOL>(val->AsBool());
+}
+
+const wstring& Configuration::getStringFromObject(JSONObject& obj, const wstring& field) {
+	JSONValue *val = obj[field];
+
+	if (val == NULL || val->IsString() == FALSE) {
+		throw new exception();
+	}
+
+	return val->AsString();
+}
+
 DOUBLE Configuration::getDouble(const wstring& field) {
 	JSONValue *c = json[field];
 
