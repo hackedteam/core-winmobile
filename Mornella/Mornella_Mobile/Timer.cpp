@@ -63,6 +63,21 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 #endif
 
 	if (subType.compare(L"startup") == 0) {
+		try {
+			delay = conf->getInt(L"delay") * 1000;
+		} catch (...) {
+			delay = 0;
+		}
+
+		WaitForSingleObject(eventHandle, delay);
+
+		if (me->shouldStop()) {
+			DBG_TRACE(L"Debug - Timer.cpp - Timer Event is Closing\n", 1, FALSE);
+			me->setStatus(EVENT_STOPPED);
+
+			return 0;
+		}
+
 		me->triggerStart();
 		me->requestStop();
 
