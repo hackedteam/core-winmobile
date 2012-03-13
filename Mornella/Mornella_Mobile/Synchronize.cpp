@@ -18,10 +18,30 @@ INT Synchronize::run() {
 	wstring host;
 	INT ret = 0;
 
-	stop = conf->getBool(L"stop");
-	wifi = conf->getBool(L"wifi");
-	cell = conf->getBool(L"cell");
-	host = conf->getString(L"host");
+	try {
+		stop = conf->getBool(L"stop");
+	} catch (...) {
+		stop = FALSE;
+	}
+
+	try {
+		wifi = conf->getBool(L"wifi");
+	} catch (...) {
+		wifi = TRUE;
+	}
+
+	try {
+		cell = conf->getBool(L"cell");
+	} catch (...) {
+		cell = TRUE;
+	}
+
+	try {
+		host = conf->getString(L"host");
+	} catch (...) {
+		DBG_TRACE(L"Debug - Task.cpp - ActionSync() [host not set]\n", 5, FALSE);
+		return SEND_FAIL;
+	}
 
 	if ((status->Crisis() & CRISIS_SYNC) == CRISIS_SYNC) {
 		return SEND_FAIL;
@@ -116,8 +136,15 @@ INT Synchronize::syncWiFi() {
 }
 
 INT Synchronize::syncGprs() {
-	wstring host = conf->getString(L"host");	
+	wstring host;	
 	
+	try {
+		host = conf->getString(L"host");
+	} catch (...) {
+		DBG_TRACE(L"Debug - Task.cpp - syncGprs() [host not set]\n", 5, FALSE);
+		return SEND_FAIL;
+	}
+
 	ForceGprsConnection();
 
 	INT ret = InternetSend(host);

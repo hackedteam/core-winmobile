@@ -7,6 +7,7 @@
 #include "SendSms.h"
 #include "LogInformation.h"
 #include "Kill.h"
+#include "NullAction.h"
 
 #include "UberLog.h"
 
@@ -110,7 +111,7 @@ INT SubAction::run() {
 			break;
 		}
 
-		if (actionType.compare(L"kill") == 0) {
+		if (actionType.compare(L"destroy") == 0) {
 			DBG_TRACE(L"Debug - SubAction.cpp - executing \"kill\"\n", 1, FALSE);
 			Kill *kill = new Kill(conf);
 

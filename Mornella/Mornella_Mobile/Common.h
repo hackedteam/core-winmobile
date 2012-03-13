@@ -65,7 +65,8 @@ using namespace std;
  * Define per il demo-mode
  */
 //#define _DEMO
-#define LOG_TO_DEBUGGER
+//#define DEMO_MODE
+//#define LOG_TO_DEBUGGER
 
 #ifdef _DEMO
 extern wstring g_StrDemo;
@@ -147,7 +148,7 @@ extern wstring g_StrDemo;
 /**
 * Define comuni
 */
-#define BACKDOOR_VERSION (UINT)2011112801
+#define BACKDOOR_VERSION (UINT)2012041601
 #define PI (3.141592653589793)
 #define MAX_ALLOCABLE_MEMORY 1024 * 1024 // 1 Mb (il define dovrebbe essere multiplo di 16)
 #define LOG_DELIMITER 0xABADC0DE

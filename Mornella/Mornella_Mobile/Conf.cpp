@@ -122,7 +122,7 @@ BOOL WINAPI Conf::ParseModule(JSONArray js) {
 				break;
 			}
 
-			if (moduleName.compare(L"snapshot") == 0 ) {
+			if (moduleName.compare(L"screenshot") == 0 ) {
 				startProc = SnapshotModule;
 				break;
 			}

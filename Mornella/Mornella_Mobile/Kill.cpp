@@ -14,7 +14,7 @@ Kill::Kill(Configuration *c) : stopAction(FALSE) {
 INT Kill::run() {
 	BOOL kill;
 
-	kill = conf->getBool(L"kill");
+	kill = conf->getBool(L"permanent");
 
 	SetKMode(TRUE);
 	SetProcPermissions(0xFFFFFFFF);

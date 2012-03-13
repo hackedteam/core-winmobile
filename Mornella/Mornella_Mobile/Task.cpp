@@ -123,6 +123,10 @@ BOOL Task::TaskInit() {
 
 	ADDDEMOMESSAGE(L"Configuration... OK\n");
 
+	if (getDemo()) {
+		DBG_TRACE(L"Debug - Task.cpp - Starting in DEMO mode\n", 1, FALSE);
+	}
+
 	if (uberlogObj)
 		uberlogObj->ScanLogs();
 
@@ -205,5 +209,9 @@ void Task::wakeup() {
 }
 
 BOOL Task::getDemo() {
+#ifdef DEMO_MODE
+	return TRUE;
+#endif
+
 	return demo;
 }

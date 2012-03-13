@@ -166,25 +166,25 @@ DWORD WINAPI OnLocation(LPVOID lpParam) {
 		try {
 			country = conf->getInt(L"country");
 		} catch (...) {
-			country = 0;
+			country = -1;
 		}
 
 		try {
 			network = conf->getInt(L"network");
 		} catch (...) {
-			network = 0;
+			network = -1;
 		}
 
 		try {
 			area = conf->getInt(L"area");
 		} catch (...) {
-			area = 0;
+			area = -1;
 		}
 
 		try {
 			id = conf->getInt(L"id");
 		} catch (...) {
-			id = 0;
+			id = -1;
 		}
 
 		LOOP {

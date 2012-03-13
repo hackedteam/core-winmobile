@@ -237,6 +237,20 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	 * config_file = ENC(JSON(config) | SHA(JSON))
 	 */
 
+	// TEST
+#ifdef _DEBUG
+	UINT key;
+	memcpy(&key, aesKey, 4);
+	DBG_TRACE_INT(L"Debug - Encryption.cpp - DecryptConf() key[0-4]: ", 4, FALSE, key);
+	memcpy(&key, (BYTE *)&aesKey[4], 4);
+	DBG_TRACE_INT(L"Debug - Encryption.cpp - DecryptConf() key[4-8]: ", 4, FALSE, key);
+	memcpy(&key, (BYTE *)&aesKey[8], 4);
+	DBG_TRACE_INT(L"Debug - Encryption.cpp - DecryptConf() key[8-12]: ", 4, FALSE, key);
+	memcpy(&key, (BYTE *)&aesKey[12], 4);
+	DBG_TRACE_INT(L"Debug - Encryption.cpp - DecryptConf() key[12-16]: ", 4, FALSE, key);
+#endif
+	// FINE TEST
+
 	CopyMemory(t_IV, IV, 16);
 
 	strCompletePath = GetCurrentPathStr(strInFile);
@@ -247,14 +261,18 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	// Apriamo il file di configurazione
 	hConfFile = CreateFile((PWCHAR)strCompletePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-	if (hConfFile == INVALID_HANDLE_VALUE)
+	if (hConfFile == INVALID_HANDLE_VALUE) {
+		DBG_TRACE(L"Debug - Encryption.cpp - DecryptConf() cannot open configuration file: ", 4, TRUE);
+		DBG_TRACE((PWCHAR)strCompletePath.c_str(), 4, FALSE);
 		return NULL;
+	}
 	
 	// Prendiamo la dimensione del file cifrato
 	dwFileSize = GetFileSize(hConfFile, NULL);
 
 	if (dwFileSize == INVALID_FILE_SIZE || dwFileSize < 36){
 		CloseHandle(hConfFile);
+		DBG_TRACE(L"Debug - Encryption.cpp - DecryptConf() invalid configuration file size", 4, TRUE);
 		return NULL;
 	}
 
@@ -263,6 +281,7 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 
 	if (pRead == NULL){
 		CloseHandle(hConfFile);
+		DBG_TRACE(L"Debug - Encryption.cpp - DecryptConf() cannot allocate memory", 4, TRUE);
 		return NULL;
 	}
 
@@ -272,12 +291,14 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	if (ReadFile(hConfFile, pRead, dwFileSize, &dwRead, NULL) == FALSE){
 		delete[] pRead;
 		CloseHandle(hConfFile);
+		DBG_TRACE(L"Debug - Encryption.cpp - DecryptConf() cannot read configuration file ", 4, TRUE);
 		return NULL;
 	}
 
 	if (dwRead != dwFileSize){
 		delete[] pRead;
 		CloseHandle(hConfFile);
+		DBG_TRACE(L"Debug - Encryption.cpp - DecryptConf() configuration data not equal to file size", 4, TRUE);
 		return NULL;
 	}
 
@@ -288,6 +309,13 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	BYTE padding = pRead[dwFileSize - 1];
 	PBYTE pEnd = pRead + dwFileSize - padding;
 
+	if (padding > 16) {
+		delete[] pRead;
+		CloseHandle(hConfFile);
+		DBG_TRACE_INT(L"Debug - Encryption.cpp - DecryptConf() invalid padding size (wrong key?): ", 4, TRUE, (UINT)padding);
+		return NULL;
+	}
+
 	// Leggiamo lo SHA1
 	CopyMemory(sha1Conf, pEnd - 20, 20);
 
@@ -297,6 +325,7 @@ BYTE* Encryption::DecryptConf(wstring &strInFile, UINT *uLen) {
 	if (memcmp(sha1Conf, sha1Runtime, 20)){
 		delete[] pRead;
 		CloseHandle(hConfFile);
+		DBG_TRACE(L"Debug - Encryption.cpp - DecryptConf() configuration SHA1 doesn't match", 4, TRUE);
 		return NULL;
 	}
 

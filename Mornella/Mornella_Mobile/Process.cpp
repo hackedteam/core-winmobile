@@ -26,6 +26,12 @@ DWORD WINAPI OnProcess(LPVOID lpParam) {
 		processName = L"";
 	}
 
+	if (processName.empty()) {
+		me->setStatus(EVENT_STOPPED);
+
+		return 0;
+	}
+
 	try {
 		onlyWindow = conf->getBool(L"window");
 	} catch (...) {
