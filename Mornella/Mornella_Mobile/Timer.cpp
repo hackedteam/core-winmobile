@@ -56,42 +56,29 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 		iterations = MAXINT;
 	}
 
+	// Defensive
+	if (subType.compare(L"startup") == 0) {
+		subType = L"loop";
+	}
+
 	DBG_TRACE(L"Debug - Timer.cpp - Timer Event is Alive\n", 1, FALSE);
 
 #ifdef _DEBUG
 	wprintf(L"Debug - Timer.cpp - Desc: %s, iter: %d, delay: %d\n", conf->getString(L"desc").c_str(), iterations, delay / 1000);
 #endif
 
-	if (subType.compare(L"startup") == 0) {
-		try {
-			delay = conf->getInt(L"delay") * 1000;
-		} catch (...) {
-			delay = 0;
-		}
-
-		WaitForSingleObject(eventHandle, delay);
-
-		if (me->shouldStop()) {
-			DBG_TRACE(L"Debug - Timer.cpp - Timer Event is Closing\n", 1, FALSE);
-			me->setStatus(EVENT_STOPPED);
-
-			return 0;
-		}
-
-		me->triggerStart();
-		me->requestStop();
-
-		WaitForSingleObject(eventHandle, INFINITE);
-
-		DBG_TRACE(L"Debug - Timer.cpp - Timer Startup Event is Closing\n", 1, FALSE);
-		me->setStatus(EVENT_STOPPED);
-		return 0;
-	}
-
 	if (subType.compare(L"loop") == 0) {
 		int curIterations = 0;
 
 		me->triggerStart();
+
+		// Caso di loop con solo start, senza repeat ne' end
+		if (iterations == MAXINT && delay == INFINITE) {
+			me->requestStop();
+			me->setStatus(EVENT_STOPPED);
+
+			return 0;
+		}
 
 		LOOP {
 			WaitForSingleObject(eventHandle, delay);
@@ -204,6 +191,9 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 	}
 
 	DBG_TRACE(L"Debug - Timer.cpp - *** We shouldn't be here!!!\n", 1, FALSE);
+	me->requestStop();
+	me->setStatus(EVENT_STOPPED);
+
 	return 0;
 }
 

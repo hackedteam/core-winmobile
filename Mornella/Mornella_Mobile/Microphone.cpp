@@ -251,7 +251,7 @@ DWORD WINAPI RecordedMicrophone(LPVOID lpParam) {
 	micAgent = NULL;
 	
 	try {
-		vadThreshold = conf->getInt(L"vadthreshold");
+		vadThreshold = conf->getInt(L"threshold");
 	} catch (...) {
 		vadThreshold = 50;
 	}

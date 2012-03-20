@@ -322,8 +322,11 @@ BOOL Conf::LoadConf() {
 		strMig = GetMigrationName(TRUE);
 		strBack = GetBackupName(TRUE);
 		
-		MoveFile(strMig.c_str(), strBack.c_str());
-
+		// Copiamo la migrazione come conf di backup
+		if (CopyFile(strMig.c_str(), strBack.c_str(), FALSE)) {
+			DeleteFile(strMig.c_str());
+		}
+		
 		Log logInfo;
 		logInfo.WriteLogInfo(L"Migration conf activated");
 	}

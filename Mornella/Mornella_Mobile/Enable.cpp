@@ -6,7 +6,8 @@ Enable::Enable(Configuration *c) : stopAction(FALSE) {
 }
 
 INT Enable::run() {
-	wstring eventType, status;
+	wstring status;
+	int eventType;
 
 	try {
 		status = conf->getString(L"status");
@@ -16,19 +17,19 @@ INT Enable::run() {
 	}
 
 	try {
-		eventType = conf->getString(L"event");
+		eventType = conf->getInt(L"event");
 	} catch (...) {
 		DBG_TRACE(L"Debug - Enable.cpp - Unknown \"event\"\n", 1, FALSE);
 		return 0;
 	}
 
 	if (status.compare(L"enable") == 0) {
-		DBG_TRACE_3(L"Debug - Enable.cpp - Enabling Event: ", eventType.c_str(), L"\n", 1, FALSE);
+		DBG_TRACE_INT(L"Debug - Enable.cpp - Enabling Event: ", 1, FALSE, eventType);
 		return (INT)events->enable(eventType);
 	}
 
 	if (status.compare(L"disable") == 0) {
-		DBG_TRACE_3(L"Debug - Enable.cpp - Disabling Event: ", eventType.c_str(), L"\n", 1, FALSE);
+		DBG_TRACE_INT(L"Debug - Enable.cpp - Disabling Event: ", 1, FALSE, eventType);
 		return (INT)events->disable(eventType);
 	}
 

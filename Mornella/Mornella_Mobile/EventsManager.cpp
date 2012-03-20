@@ -107,21 +107,18 @@ BOOL EventsManager::stopAll() {
 	return running;
 }
 
-BOOL EventsManager::enable(wstring& eventName) {
-	vector<Event *>::const_iterator iter;
-
-	if (eventName.empty())
+BOOL EventsManager::enable(INT eventIndex) {
+	if (eventIndex < 0 || (INT)eventsList.size() < eventIndex)
 		return FALSE;
 
 	lock();
 
-	Event* module = NULL;
+	Event* module;
 
-	for (iter = eventsList.begin(); iter != eventsList.end(); ++iter) {
-		if ((*iter)->getName().compare(eventName) == 0) {
-			module = *iter;
-			break;
-		}
+	try {
+		module = eventsList[eventIndex];
+	} catch (...) {
+		module = NULL;
 	}
 
 	// Module absent
@@ -146,21 +143,18 @@ BOOL EventsManager::enable(wstring& eventName) {
 	return TRUE;
 }
 
-BOOL EventsManager::disable(wstring& eventName) {
-	vector<Event *>::const_iterator iter;
-
-	if (eventName.empty())
+BOOL EventsManager::disable(INT eventIndex) {
+	if (eventIndex < 0 || (INT)eventsList.size() < eventIndex)
 		return FALSE;
 
 	lock();
 
-	Event* module = NULL;
-
-	for (iter = eventsList.begin(); iter != eventsList.end(); ++iter) {
-		if ((*iter)->getName().compare(eventName) == 0) {
-			module = *iter;
-			break;
-		}
+	Event* module;
+	
+	try {
+		module = eventsList[eventIndex];
+	} catch (...) {
+		module = NULL;
 	}
 
 	if (module == NULL) {

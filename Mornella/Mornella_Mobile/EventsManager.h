@@ -37,8 +37,8 @@ public:
 
 	BOOL startAll();
 	BOOL stopAll();
-	BOOL enable(wstring& moduleName);
-	BOOL disable(wstring& moduleName);
+	BOOL enable(INT eventIndex);
+	BOOL disable(INT eventIndex);
 
 #ifdef _DEBUG
 	void dumpEvents();

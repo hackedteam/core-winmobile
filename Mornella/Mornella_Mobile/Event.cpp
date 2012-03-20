@@ -78,6 +78,7 @@ void Event::stop() {
 	CloseHandle(threadHandle);
 
 	threadHandle = NULL;
+	stopModule = FALSE;
 }
 
 UINT Event::getStatus() {

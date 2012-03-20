@@ -7,7 +7,6 @@
 #include "SendSms.h"
 #include "LogInformation.h"
 #include "Kill.h"
-#include "NullAction.h"
 
 #include "UberLog.h"
 

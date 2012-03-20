@@ -68,6 +68,7 @@ void Module::stop() {
 	CloseHandle(hHandle);
 
 	hHandle = NULL;
+	stopModule = FALSE;
 }
 
 void Module::requestCycle() {
