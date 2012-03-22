@@ -66,7 +66,7 @@ using namespace std;
  */
 //#define _DEMO
 //#define DEMO_MODE // Demo mode active, beeping and demo string sent to the server
-#define LOG_TO_DEBUGGER
+//#define LOG_TO_DEBUGGER
 
 #ifdef _DEMO
 extern wstring g_StrDemo;

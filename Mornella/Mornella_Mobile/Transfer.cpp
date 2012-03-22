@@ -1685,7 +1685,17 @@ BOOL Transfer::RestGetUpgrade() {
 
 			if (WriteFile(hFile, b.getCurBuf(), uFileLen, &dwWritten, NULL) == FALSE) {
 				CloseHandle(hFile);
-				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUpgrade() FAILED [WriteFile()]\n", 5, FALSE);
+				DeleteFile(strPathName.c_str());
+
+				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUpgrade() FAILED [WriteFile() failed]\n", 5, FALSE);
+				continue;
+			}
+
+			if (dwWritten < uFileLen) {
+				CloseHandle(hFile);
+				DeleteFile(strPathName.c_str());
+
+				DBG_TRACE(L"Debug - Transfer.cpp - RestGetUpgrade() FAILED [WriteFile() wrote less data than expected]\n", 5, FALSE);
 				continue;
 			}
 
