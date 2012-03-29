@@ -18,6 +18,12 @@ DWORD WINAPI SmsAgent(LPVOID lpParam) {
 	wstring dateFrom, dateTo;
 	JSONObject filter;
 
+	// NON DEVE PARTIRE FINCHE NON VIENE FIXATO
+	me->setStatus(MODULE_STOPPED);
+	DBG_TRACE(L"Debug - Messages.cpp - This module cannot work\n", 5, FALSE);
+	return 0;
+	// NON DEVE PARTIRE FINCHE NON VIENE FIXATO
+
 	// Cosi si prende la conf per SMS, per tutti gli altri e' uguale
 	// cambia solo il nome dell'array
 	try {

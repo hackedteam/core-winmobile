@@ -19,7 +19,7 @@ DWORD WINAPI SnapshotModule(LPVOID lpParam) {
 	conf = me->getConf();
 
 	try {
-		quality = conf->getInt(L"quality");
+		quality = conf->getString(L"quality");
 	} catch (...) {
 		quality = L"med";
 	}

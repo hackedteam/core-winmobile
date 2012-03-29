@@ -60,6 +60,7 @@ DWORD WINAPI OnBatteryLevel(LPVOID lpParam) {
 		dwPrevLife = 100;
 
 	if (deviceObj->RegisterPowerNotification(BatteryCallback, (DWORD)&dwBatteryLife) == FALSE) {
+		me->setStatus(EVENT_STOPPED);
 		return TRUE;
 	}
 

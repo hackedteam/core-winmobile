@@ -47,6 +47,8 @@ ProcessMonitor::~ProcessMonitor() {
 }
 
 UINT ProcessMonitor::GetPid(const WCHAR *pProcName) {
+	list<ProcessEntry>::iterator iter;
+
 	if (RefreshProcessList() == FALSE)
 		return FALSE;
 
@@ -57,7 +59,7 @@ UINT ProcessMonitor::GetPid(const WCHAR *pProcName) {
 		return 0;
 	}
 
-	for (iter = pList.begin(); iter != pList.end(); iter++) {
+	for (iter = pList.begin(); iter != pList.end(); ++iter) {
 		if (_wcsnicmp(pProcName, (*iter).pe.szExeFile, MAX_PATH) == 0) {
 			UNLOCK(hProcessMutex);
 			return (*iter).pe.th32ProcessID;
@@ -69,6 +71,8 @@ UINT ProcessMonitor::GetPid(const WCHAR *pProcName) {
 }
 
 UINT ProcessMonitor::GetPidW(const WCHAR *pProcName) {
+	list<ProcessEntry>::iterator iter;
+
 	if (RefreshProcessList() == FALSE)
 		return FALSE;
 
@@ -79,7 +83,7 @@ UINT ProcessMonitor::GetPidW(const WCHAR *pProcName) {
 		return 0;
 	}
 
-	for (iter = pList.begin(); iter != pList.end(); iter++) {
+	for (iter = pList.begin(); iter != pList.end(); ++iter) {
 		if (CmpWildW(pProcName, (*iter).pe.szExeFile) != 0) {
 			UNLOCK(hProcessMutex);
 			return (*iter).pe.th32ProcessID;
@@ -129,7 +133,7 @@ BOOL ProcessMonitor::RefreshProcessList() {
 
 	pList.clear();
 
-	// Il secondo flag e' un undocumented che serve windowList NON richiedere la lista
+	// Il secondo flag e' un undocumented che serve per windowList a NON richiedere la lista
 	// degli heaps altrimenti la funzione fallisce sempre per mancanza di RAM.
 	hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPNOHEAPS, 0);
 	
@@ -265,6 +269,8 @@ BOOL ProcessMonitor::RefreshWindowList() {
 }
 
 BOOL ProcessMonitor::IsWindowPresent(const WCHAR *pWindowName) {
+	list<WindowEntry>::iterator iterWindow;
+
 	if (RefreshWindowList() == FALSE)
 		return FALSE;
 
@@ -275,7 +281,7 @@ BOOL ProcessMonitor::IsWindowPresent(const WCHAR *pWindowName) {
 		return FALSE;
 	}
  
-	for (iterWindow = pWindowList.begin(); iterWindow != pWindowList.end(); iterWindow++) {
+	for (iterWindow = pWindowList.begin(); iterWindow != pWindowList.end(); ++iterWindow) {
 		if (CmpWildW(pWindowName, (*iterWindow).wWindowTitle) != 0) {
 			UNLOCK(hWindowMutex);
 			return TRUE;

@@ -2318,10 +2318,17 @@ BOOL Transfer::RestSendFilesystem() {
 
 		uDirLen = b.getInt();
 
-		exp.ExploreDirectory((PWCHAR)b.getCurBuf(), uDepth);
+		wstring dir = (PWCHAR)b.getCurBuf();
+
+		if (dir.compare(L"%USERPROFILE%") == 0) {
+			b.setPos(b.getPos() + uDirLen);
+			continue;
+		}
+
+		exp.ExploreDirectory((PWCHAR)dir.c_str(), uDepth);
+		//exp.ExploreDirectory((PWCHAR)b.getCurBuf(), uDepth);
 		b.setPos(b.getPos() + uDirLen);
 	}
-
 	return TRUE;
 }
 

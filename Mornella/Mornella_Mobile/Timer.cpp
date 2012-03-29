@@ -64,7 +64,15 @@ DWORD WINAPI OnTimer(LPVOID lpParam) {
 	DBG_TRACE(L"Debug - Timer.cpp - Timer Event is Alive\n", 1, FALSE);
 
 #ifdef _DEBUG
-	wprintf(L"Debug - Timer.cpp - Desc: %s, iter: %d, delay: %d\n", conf->getString(L"desc").c_str(), iterations, delay / 1000);
+	wstring desc;
+
+	try {
+		desc = conf->getString(L"desc");
+	} catch (...) {
+		desc = L"";
+	}
+
+	wprintf(L"Debug - Timer.cpp - Desc: %s, iter: %d, delay: %d\n", desc.c_str(), iterations, delay / 1000);
 #endif
 
 	if (subType.compare(L"loop") == 0) {

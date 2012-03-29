@@ -29,9 +29,7 @@ class ProcessMonitor {
 		ProcessEntry procEntry;
 		WindowEntry windowEntry;
 		list<ProcessEntry> pList;
-		list<ProcessEntry>::iterator iter;
 		list<WindowEntry> pWindowList;
-		list<WindowEntry>::iterator iterWindow;
 
 	private:
 		/**

@@ -18,6 +18,13 @@ wstring g_StrDemo;
 // Subversion
 BYTE g_Subtype[16] = "WINMO\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
+#if defined(DEMO_MODE) || !defined(_DEBUG)
+// Marker per il demo mode
+BYTE g_DemoMode[] = "hxVtdxJ/Z8LvK3ULSnKRUmLE";
+#else
+BYTE g_DemoMode[] = "NODEMONODEMONODEMONODEMO";
+#endif
+
 // Chiave per cifrare i log
 BYTE g_AesKey[] = "3j9WmmDgBqyU270FTid3719g64bP4s52";
 
@@ -35,9 +42,6 @@ BYTE g_Challenge[] = "f7Hk0f5usd04apdvqw13F5ed25soV5eD";
 
 // Nome del file di configurazione CIFRATO con il primo byte di g_Challenge[]
 WCHAR g_ConfName[] = L"cptm511.dql";
-
-// Marker per il demo mode
-BYTE g_Demo[] = "hxVtdxJ/Z8LvK3ULSnKRUmLE";
 
 // Il nome della nostra DLL, viene riempito in fase di inizializzazione dalla backdoor
 wstring g_strOurName;

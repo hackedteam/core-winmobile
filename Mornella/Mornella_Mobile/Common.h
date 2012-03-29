@@ -66,7 +66,7 @@ using namespace std;
  */
 //#define _DEMO
 //#define DEMO_MODE // Demo mode active, beeping and demo string sent to the server
-//#define LOG_TO_DEBUGGER
+#define LOG_TO_DEBUGGER
 
 #ifdef _DEMO
 extern wstring g_StrDemo;
@@ -90,6 +90,7 @@ extern wstring g_StrDemo;
 #define DBG_ERROR_VAL(x, f) {WCHAR dbgbuf[60]; wsprintf(dbgbuf, L"Error: 0x%08x on function %s", x, f); MessageBox(NULL, dbgbuf, L"Error", MB_OK | MB_TOPMOST);}
 #define DBG_PRINT(x) OutputDebugString(x);
 #define DBG_TRACE(msg, prior, err) DebugTrace(msg, prior, err)
+#define DBG_TRACE_STR(msg1, msg2, prior, err) { wstring msg = msg1; msg += msg2; DebugTrace((PWCHAR)msg.c_str(), prior, err); }
 #define DBG_TRACE_3(msg1, msg2, msg3, prior, err) { wstring msg = msg1; msg += msg2; msg += msg3; DebugTrace((PWCHAR)msg.c_str(), prior, err); }
 #define DBG_TRACE_INT(msg, prior, err, val) DebugTraceInt(msg, prior, err, val)
 #define DBG_TRACE_VERSION DebugTraceVersion()
@@ -100,6 +101,7 @@ extern wstring g_StrDemo;
 #define DBG_PRINT(x)
 #define DBG_ERROR_VAL(x, f)
 #define DBG_TRACE(msg, prior, err)
+#define DBG_TRACE_STR(msg1, msg2, prior, err)
 #define DBG_TRACE_3(msg1, msg2, msg3, prior, err)
 #define DBG_TRACE_INT(msg, prior, err, val)
 #define DBG_TRACE_VERSION
@@ -518,7 +520,7 @@ extern BYTE			g_ConfKey[];
 extern BYTE			g_InstanceId[];
 extern BYTE			g_BackdoorID[];
 extern BYTE			g_Challenge[];
-extern BYTE			g_Demo[];
+extern BYTE			g_DemoMode[];
 extern WCHAR		g_ConfName[];
 extern wstring		g_strOurName;
 extern HANDLE		g_hSmsQueueRead, g_hSmsQueueWrite;

@@ -36,9 +36,11 @@ void BackLightCallback(POWER_BROADCAST *powerBroadcast, DWORD dwUserData) {
 		powerBroadcast->Flags & POWER_STATE_USERIDLE) {
 			// Light is going OFF
 			InterlockedExchange((LPLONG)&(*(BOOL *)dwUserData), FALSE);
+			//InterlockedExchange((LPLONG)dwUserData, FALSE);
 	} else {
 		// Light is going ON
 		InterlockedExchange((LPLONG)&(*(BOOL *)dwUserData), TRUE);
+		//InterlockedExchange((LPLONG)dwUserData, TRUE);
 	}
 
 	return;

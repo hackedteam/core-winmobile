@@ -39,6 +39,7 @@ DWORD WINAPI OnAC(LPVOID lpParam) {
 	dwAcStatus = pBattery->ACLineStatus;
 
 	if (deviceObj->RegisterPowerNotification(AcCallback, (DWORD)&dwAcStatus) == FALSE) {
+		me->setStatus(EVENT_STOPPED);
 		return 0;
 	}
 
