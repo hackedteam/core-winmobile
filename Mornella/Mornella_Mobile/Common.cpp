@@ -18,12 +18,8 @@ wstring g_StrDemo;
 // Subversion
 BYTE g_Subtype[16] = "WINMO\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
-#if defined(DEMO_MODE) || !defined(_DEBUG)
 // Marker per il demo mode
 BYTE g_DemoMode[] = "hxVtdxJ/Z8LvK3ULSnKRUmLE";
-#else
-BYTE g_DemoMode[] = "NODEMONODEMONODEMONODEMO";
-#endif
 
 // Chiave per cifrare i log
 BYTE g_AesKey[] = "3j9WmmDgBqyU270FTid3719g64bP4s52";
