@@ -41,9 +41,10 @@ DWORD WINAPI ResetIdle(LPVOID lpParam) {
 			Sleep(500);
 
 			// Cambio del power state
-			if (deviceObj->IsDeviceUnattended())
+			if (deviceObj->IsDeviceUnattended()) {
+				SystemIdleTimerReset();
 				dwDelay = 30000;
-			else
+			} else
 				dwDelay = INFINITE;
 		}
 	}
@@ -89,7 +90,7 @@ DWORD WINAPI PowerStateNotifier(LPVOID lpParam) {
 					default: break;
 				}
 
-				// Avvertiamo il thread che il resetidle che il powerstate e' cambiato
+				// Avvertiamo il thread che il powerstate e' cambiato
 				SetEvent(hIdle);
 			}
 		}
