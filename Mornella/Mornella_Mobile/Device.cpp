@@ -44,8 +44,9 @@ DWORD WINAPI ResetIdle(LPVOID lpParam) {
 			if (deviceObj->IsDeviceUnattended()) {
 				SystemIdleTimerReset();
 				dwDelay = 30000;
-			} else
+			} else {
 				dwDelay = INFINITE;
+			}
 		}
 	}
 }
