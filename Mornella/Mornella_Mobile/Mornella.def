@@ -1,0 +1,13 @@
+LIBRARY      "MORNELLA"
+
+EXPORTS
+	BTC_Init
+	BTC_Deinit
+	BTC_Close
+	BTC_IOControl
+	BTC_Open
+	BTC_Read
+	BTC_Seek
+	BTC_Write
+	BTC_WriteAsync
+	
